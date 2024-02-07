@@ -1,0 +1,53 @@
+Ref
+%%%
+
+class Ref:
+
+    def valsToRefs(valList):
+        refList = []
+        for v in valList:
+            refList.append(ValRef(v))
+        return refList
+
+    def deRef():
+        pass
+    def setRef(v):
+        raise RuntimeException("cannot modify a read-only reference")
+
+%%%
+
+ValRef
+%%%
+
+class ValRef(Ref):
+
+    val = None
+
+    def __init__(self, val):
+        self.val = val
+
+    def deRef(self):
+        return self.val
+
+    def setRef(self, v):
+        self.val = v
+
+%%%
+
+ValRORef
+%%%
+
+class ValRORef(Ref):
+
+    val = None
+
+    def __init__(self, val):
+        self.val = val
+
+    def deRef(self):
+        return self.val
+
+    def setRORef(self, v):
+        self.val = v
+
+%%%

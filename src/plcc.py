@@ -112,6 +112,7 @@ def main():
     lex(nxt)    # lexical analyzer generation
     par(nxt)    # LL(1) check and parser generation
     sem(nxt)    # semantic actions
+    done()
 
 def plccInit():
     global flags, argv, STD, STDT, STDP
@@ -127,13 +128,13 @@ def plccInit():
     flags['libplcc'] = LIBPLCC()
     flags['Token'] = True         # generate scanner-related files
     # behavior-related flags
-    flags['debug'] = 0            # default debug value
-    flags['destdir'] = 'Java'     # the default destination directory
-    flags['pattern'] = True       # create a scanner that uses re. patterns
-    flags['LL1'] = True           # check for LL(1)
-    flags['parser'] = True        # create a parser
-    flags['semantics'] = True     # create semantics routines
-    flags['nowrite'] = False      # when True, produce *no* file output
+    flags['debug'] = 0                  # default debug value
+    flags['language'] = 'Python'        # the default output language (supports Python and Java)
+    flags['pattern'] = True             # create a scanner that uses re. patterns
+    flags['LL1'] = True                 # check for LL(1)
+    flags['parser'] = True              # create a parser
+    flags['semantics'] = True           # create semantics routines
+    flags['nowrite'] = False            # when True, produce *no* file output
 
 def jsonAstInit():
     global flags, STD, STDP
@@ -239,20 +240,31 @@ def lexFinishUp():
     global termSpecs, STDT
     if len(termSpecs) == 0:
         death('No tokens specified -- quitting')
-    # first create the destination (Java) directory if necessary
+    # first create the destination directory if necessary
     if getFlag('nowrite'):
         # don't write any files
         return
-    dst = getFlag('destdir')
-    if not dst:
-        death('illegal destdir flag value')
-    try:
-        os.mkdir(dst)
-        debug('[lexFinishUp] ' + dst + ': destination subdirectory created')
-    except FileExistsError:
-        debug('[lexFinishUp] ' + dst + ': destination subdirectory exists')
-    except:
-        death(dst + ': error creating destination subdirectory')
+    dst = getFlag('language')
+    if dst == 'Python':
+        try:
+            os.mkdir(dst)
+            debug('[lexFinishUp] ' + dst + ': destination subdirectory created')
+        except FileExistsError:
+            debug('[lexFinishUp] ' + dst + ': destination subdirectory exists')
+        except:
+            death(dst + ': error creating destination subdirectory')
+    elif dst == 'Java':
+        try:
+            os.mkdir(dst)
+            debug('[lexFinishUp] ' + dst + ': destination subdirectory created')
+        except FileExistsError:
+            debug('[lexFinishUp] ' + dst + ': destination subdirectory exists')
+        except:
+            death(dst + ': error creating destination subdirectory')
+    else:
+        death(dst + ': invalid value for language (must be "Python" or "Java")')
+
+
     if not getFlag('Token'):
         return # do not create any automatically generated scanner-related files
     libplcc = getFlag('libplcc')
@@ -378,7 +390,7 @@ def parFinishUp():
     if getFlag('nowrite'):
         return
     # copy the Std parser-related files
-    dst = getFlag('destdir')
+    dst = getFlag('language')
     libplcc = getFlag('libplcc')
     std = libplcc + '/Std'
     for fname in STDP:
@@ -643,39 +655,75 @@ def makeAbstractStub(base):
         for tok in cases[cls]:
             caseList.append('case {}:'.format(tok))
         caseList.append('    return {}.parse(scn$,trace$);'.format(cls))
-    if base == nt2cls(startSymbol):
-        ext = ' extends _Start'
-    else:
-        ext = ''
-    stubString = """\
-//{base}:top//
-//{base}:import//
-import java.util.*;
 
-public abstract class {base}{ext} /*{base}:class*/ {{
 
-    public static final String $className = "{base}";
-    public static {base} parse(Scan scn$, Trace trace$) {{
-        Token t$ = scn$.cur();
-        Token.Match match$ = t$.match;
-        switch(match$) {{
-{cases}
-        default:
-            throw new PLCCException(
-                "Parse error",
-                "{base} cannot begin with " + t$.errString()
-            );
+    if getFlag('language') == 'Python':
+        if base == nt2cls(startSymbol):
+            ext = '_Start'
+        else:
+            ext = ''
+        stubString = """\
+    #{base}:top#
+    #{base}:import#
+    from ABC import ABC
+
+    class {base}({ext}, ABC) #{base}:class# :
+
+        $className = "{base}"
+        def parse(Scan scn$, Trace trace$):
+            Token t$ = scn$.cur()
+            Token.Match match$ = t$.match
+            match match$:
+    {cases}
+            case _:
+                raise PLCCException(
+                    "Parse error",
+                    "{base} cannot begin with " + t$.errString()
+                )
+
+    #{base}#
+    """.format(cls=cls,
+            base=base,
+            ext=ext,
+            cases='\n'.join(indent(2, caseList))
+            )
+        return stubString
+
+
+    elif getFlag('language') == 'Java':
+        if base == nt2cls(startSymbol):
+            ext = ' extends _Start'
+        else:
+            ext = ''
+        stubString = """\
+    //{base}:top//
+    //{base}:import//
+    import java.util.*;
+
+    public abstract class {base}{ext} /*{base}:class*/ {{
+
+        public static final String $className = "{base}";
+        public static {base} parse(Scan scn$, Trace trace$) {{
+            Token t$ = scn$.cur();
+            Token.Match match$ = t$.match;
+            switch(match$) {{
+    {cases}
+            default:
+                throw new PLCCException(
+                    "Parse error",
+                    "{base} cannot begin with " + t$.errString()
+                );
+            }}
         }}
-    }}
 
-//{base}//
-}}
-""".format(cls=cls,
-           base=base,
-           ext=ext,
-           cases='\n'.join(indent(2, caseList))
-          )
-    return stubString
+    //{base}//
+    }}
+    """.format(cls=cls,
+            base=base,
+            ext=ext,
+            cases='\n'.join(indent(2, caseList))
+            )
+        return stubString
 
 def makeStub(cls):
     global fields, extends, rrule
@@ -696,8 +744,11 @@ def makeStub(cls):
         (fieldVars, parseString) = makeParse(cls, rhs)
         # two sub-cases: either cls is an extended class (with abstract base class) or it's a base class
         if cls in extends:
-            # ext = 'extends ' + extends[cls] + ' '
-            ext = ' extends {}'.format(extends[cls])
+            if flags['language'] == 'Java':
+                # ext = 'extends ' + extends[cls] + ' '
+                ext = ' extends {}'.format(extends[cls])
+            elif flags['language'] == 'Python':
+                ext = extends[cls]
         else:
             pass
     ruleString = '{} {} {}'.format(lhs, ruleType, ' '.join(rhs))
@@ -705,49 +756,95 @@ def makeStub(cls):
     decls = []
     inits = []
     params = []
-    for (field, fieldType) in fieldVars:
-        decls.append('public {} {};'.format(fieldType, field))
-        inits.append('this.{} = {};'.format(field, field))
-        params.append('{} {}'.format(fieldType, field))
+    if flags['language'] == 'Java':
+        for (field, fieldType) in fieldVars:
+            decls.append('public {} {};'.format(fieldType, field))
+            inits.append('this.{} = {};'.format(field, field))
+            params.append('{} {}'.format(fieldType, field))
+    elif flags['language'] == 'Python':
+        for (field, fieldType) in fieldVars:
+            decls.append('{} = None'.format(field))
+            inits.append('self.{} = {}'.format(field, field))
+            params.append('{}'.format(field))
     debug('[makeStub] cls={} decls={} params={} inits={}'.format(cls, decls, params, inits))
     debug('[makeStub] rule: {}'.format(ruleString))
-    if cls == nt2cls(startSymbol):
-        ext = ' extends _Start'
-    stubString = """\
-//{cls}:top//
-//{cls}:import//
-import java.util.*;
+    
 
-// {ruleString}
-public class {cls}{ext} /*{cls}:class*/ {{
+    if getFlag('language') == 'Python':
+        if cls == nt2cls(startSymbol):
+            ext = '_Start'
+        stubString = """\
+    #{cls}:top#
+    #{cls}:import#
 
-    public static final String $className = "{cls}";
-    public static final String $ruleString =
-        "{ruleString}";
+    # {ruleString}
+    class {cls}({ext}) #{cls}:class# :
+
+        $className = "{cls}"
+        $ruleString =
+            "{ruleString}"
+{decls}
+
+        def __init__(self, {params}):
+            #{cls}:init#
+{inits}
+
+        def parse(Scan scn$, Trace trace$):
+            if (trace$ not null):
+                trace$ = trace$.nonterm("{lhs}", scn$.lno)
+        {parse}
+
+        #{cls}#
+    """.format(cls=cls,
+            lhs=lhs,
+            ext=ext,
+            ruleString=ruleString,
+            decls='\n'.join(indent(2, decls)),
+            params=', '.join(params),
+            inits='\n'.join(indent(3, inits)),
+            parse=parseString)
+        return stubString
+
+
+
+    elif getFlag('language') == 'Java':
+        if cls == nt2cls(startSymbol):
+            ext = ' extends _Start'
+        stubString = """\
+    //{cls}:top//
+    //{cls}:import//
+    import java.util.*;
+
+    // {ruleString}
+    public class {cls}{ext} /*{cls}:class*/ {{
+
+        public static final String $className = "{cls}";
+        public static final String $ruleString =
+            "{ruleString}";
 
 {decls}
-    public {cls}({params}) {{
-//{cls}:init//
+        public {cls}({params}) {{
+            //{cls}:init//
 {inits}
-    }}
+        }}
 
-    public static {cls} parse(Scan scn$, Trace trace$) {{
-        if (trace$ != null)
-            trace$ = trace$.nonterm("{lhs}", scn$.lno);
-{parse}
-    }}
+        public static {cls} parse(Scan scn$, Trace trace$) {{
+            if (trace$ != null)
+                trace$ = trace$.nonterm("{lhs}", scn$.lno);
+    {parse}
+        }}
 
-//{cls}//
-}}
-""".format(cls=cls,
-           lhs=lhs,
-           ext=ext,
-           ruleString=ruleString,
-           decls='\n'.join(indent(1, decls)),
-           params=', '.join(params),
-           inits='\n'.join(indent(2, inits)),
-           parse=parseString)
-    return stubString
+    //{cls}//
+    }}
+    """.format(cls=cls,
+            lhs=lhs,
+            ext=ext,
+            ruleString=ruleString,
+            decls='\n'.join(indent(2, decls)),
+            params=', '.join(params),
+            inits='\n'.join(indent(3, inits)),
+            parse=parseString)
+        return stubString
 
 def indent(n, iList):
     ### make a new list with the old list items prepended with 4*n spaces
@@ -882,7 +979,7 @@ def buildStart():
     # build the _Start.java file
     if startSymbol == '':
         death('no start symbol!')
-    dst = getFlag('destdir')
+    dst = getFlag('language')
     if dst == None or getFlag('nowrite'):
         return
     file = '_Start.java'
@@ -924,9 +1021,13 @@ def sem(nxt):
             argv.extend(fn)
             # print('== extend argv by {}'.format(fn))
             continue
+        if line == "%":
+            break
         if len(line) == 0 or line[0] == '#':
             # skip just comments or blank lines
             continue
+        if line == '%':
+            break
         (cls, _, mod) = line.partition(':')
         # print('>>> cls={} mod={}'.format(cls, mod))
         cls = cls.strip()
@@ -967,7 +1068,7 @@ def sem(nxt):
                 deathLNO('no stub for class {} -- cannot replace //{}:{}//'.format(cls, cls, mod))
             stubs[cls] = codeString
     semFinishUp()
-    done()
+    
 
 def getCode(nxt):
     code = []
@@ -999,19 +1100,33 @@ def semFinishUp():
     if getFlag('nowrite'):
         return
     global stubs, STD
-    dst = flags['destdir']
-    print('\nJava source files created:')
-    # print *all* of the generated files
-    for cls in sorted(stubs):
-        if cls in STD:
-            death('{}: reserved class name'.format(cls))
-        try:
-            fname = '{}/{}.java'.format(dst, cls)
-            with open(fname, 'w') as f:
-                print(stubs[cls], end='', file=f)
-        except:
-            death('cannot write to file {}'.format(fname))
-        print('  {}.java'.format(cls))
+    dst = flags['language']
+    if dst == 'Python':
+        print('\nPython source files created:')
+        # print *all* of the generated files
+        for cls in sorted(stubs):
+            if cls in STD:
+                death('{}: reserved class name'.format(cls))
+            try:
+                fname = '{}/{}.py'.format(dst, cls)
+                with open(fname, 'w') as f:
+                    print(stubs[cls], end='', file=f)
+            except:
+                death('cannot write to file {}'.format(fname))
+            print('  {}.py'.format(cls))
+    elif dst == 'Java':
+        print('\nJava source files created:')
+        # print *all* of the generated files
+        for cls in sorted(stubs):
+            if cls in STD:
+                death('{}: reserved class name'.format(cls))
+            try:
+                fname = '{}/{}.java'.format(dst, cls)
+                with open(fname, 'w') as f:
+                    print(stubs[cls], end='', file=f)
+            except:
+                death('cannot write to file {}'.format(fname))
+            print('  {}.java'.format(cls))
 
 
 #####################

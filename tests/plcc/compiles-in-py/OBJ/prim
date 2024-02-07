@@ -1,0 +1,251 @@
+Prim
+%%%
+    // apply the primitive to the passed values
+    def Val apply(va):
+        pass
+%%%
+
+AddPrim
+%%%
+
+    def toString():
+        return "+"
+
+    def apply(va):
+        if va.length != 2:
+            raise RuntimeException("two arguments expected")
+        i0 = va[0].intVal().val
+        i1 = va[1].intVal().val
+        return IntVal(i0 + i1)
+%%%
+
+SubPrim
+%%%
+
+    def toString():
+        return "-"
+
+    def apply(va):
+        if va.length != 2:
+            raise RuntimeException("two arguments expected")
+        i0 = va[0].intVal().val
+        i1 = va[1].intVal().val
+        return IntVal(i0 - i1)
+%%%
+
+MulPrim
+%%%
+
+    def toString():
+        return "*"
+
+    def apply(va):
+        if va.length != 2:
+            raise RuntimeException("two arguments expected")
+        i0 = va[0].intVal().val
+        i1 = va[1].intVal().val
+        return IntVal(i0 - i1)
+
+%%%
+
+DivPrim
+%%%
+
+    def toString():
+        return "/"
+
+    def apply(va):
+        if va.length != 2:
+            raise RuntimeException("two arguments expected")
+        i0 = va[0].intVal().val
+        i1 = va[1].intVal().val
+        if (i1 == 0)
+            raise RuntimeException("attempt to divide by zero")
+        return IntVal(i0 / i1)
+
+%%%
+
+Add1Prim
+%%%
+
+    def toString():
+        return "add1"
+
+    def apply(va):
+        if va.length != 1:
+            raise RuntimeException("one argument expected")
+        i0 = va[0].intVal().val
+        return IntVal(i0 + 1)
+
+%%%
+
+Sub1Prim
+%%%
+
+    def toString():
+        return "sub1"
+
+    def apply(va):
+        if va.length != 1:
+            def RuntimeException("one argument expected")
+        i0 = va[0].intVal().val
+        return IntVal(i0 - 1)
+
+%%%
+
+ZeropPrim
+%%%
+
+    def toString():
+        return "zero?"
+
+    def apply(va):
+        if va.length != 1:
+            raise RuntimeException("one argument expected")
+        i0 = va[0].intVal().val
+        return IntVal(1) if i0 == 0 else IntVal(0)
+
+%%%
+
+LTPrim
+%%%
+    def toString():
+        return "<?"
+
+    def apply(va):
+        if va.length != 2:
+            raise RuntimeException("two arguments expected")
+        i0 = va[0].intVal().val
+        i1 = va[1].intVal().val
+        return IntVal(1) if i0 < i1 else IntVal(0)
+%%%
+
+LEPrim
+%%%
+    def toString():
+        return "<=?"
+
+    def apply(va):
+        if va.length != 2:
+            raise RuntimeException("two arguments expected")
+        i0 = va[0].intVal().val
+        i1 = va[1].intVal().val
+        return IntVal(1) if i0 <= i1 else IntVal(0)
+%%%
+
+GTPrim
+%%%
+    def toString():
+        return ">?"
+
+    def apply(va):
+        if va.length != 2:
+            raise RuntimeException("two arguments expected")
+        i0 = va[0].intVal().val
+        i1 = va[1].intVal().val
+        return IntVal(1) if i0 > i1 else IntVal(0)
+%%%
+
+GEPrim
+%%%
+    def toString():
+        return ">=?"
+
+    def apply(va):
+        if va.length != 2:
+            raise RuntimeException("two arguments expected")
+        i0 = va[0].intVal().val
+        i1 = va[1].intVal().val
+        return IntVal(1) if i0 >= i1 else IntVal(0)
+%%%
+
+NEPrim
+%%%
+    def toString():
+        return "<>?"
+
+    def apply(va):
+        if va.length != 2:
+            raise RuntimeException("two arguments expected")
+        i0 = va[0].intVal().val
+        i1 = va[1].intVal().val
+        return IntVal(1) if i0 != i1 else IntVal(0)
+%%%
+
+EQPrim
+%%%
+    def toString():
+        return "=?"
+
+    def apply(va):
+        if va.length != 2:
+            raise RuntimeException("two arguments expected")
+        i0 = va[0].intVal().val
+        i1 = va[1].intVal().val
+        return IntVal(1) if i0 == i1 else IntVal(0)
+%%%
+
+ObjectpPrim
+%%%
+    def apply(va):
+	    if va.length != 1:
+            raise RuntimeException("one argument expected")
+        v0 = va[0]
+        return IntVal(1) if v0.isObject() else IntVal(0)
+%%%
+
+ClasspPrim
+%%%
+    def apply(va):
+        if va.length != 1:
+            raise RuntimeException("one argument expected")
+        v0 = va[0]
+        return IntVal(1) if v0.isClass() else IntVal(0)
+%%%
+
+ListpPrim
+%%%
+    def apply(va):
+        if va.length != 1:
+            raise RuntimeException("one argument expected")
+        v0 = va[0]
+        return IntVal(1) if v0.isList() else IntVal(0)
+%%%
+	
+FirstPrim
+%%%
+    def apply(va):
+        if va.length != 1:
+            raise RuntimeException("one argument expected")
+        lst = va[0].listNode()
+        return lst.val
+%%%
+
+RestPrim
+%%%
+    def apply(va):
+        if va.length != 1:
+            raise RuntimeException("one argument expected")
+        lst = va[0].listNode()
+        return lst.listval
+%%%
+
+AddFirstPrim
+%%%
+    def apply(va):
+        if va.length != 2:
+            raise RuntimeException("two arguments expected")
+        v = va[0]
+        lst = va[1].listVal()
+        return ListNode(v, lst)
+%%%
+
+LenPrim
+%%%
+    def apply(va):
+        if va.length != 1:
+            raise RuntimeException("one argument expected")
+        lst = va[0].listVal()
+        return IntVal(lst.len())
+
+%%%

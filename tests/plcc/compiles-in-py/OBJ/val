@@ -1,0 +1,133 @@
+Val
+%%%
+
+class Val():
+
+    nil = NilVal()
+    zero = IntVal(0)
+    listNull = ListNull()
+
+    def toArray(valList):
+        n = valList.size()
+        return valList.toArray(Val[n])
+
+    def apply(self,valList):
+        raise RuntimeException(self + ": not a procedure")
+    
+    def env(self):
+	    raise RuntimeException("<" + self + ">: not an environment")
+
+    def isTrue():
+	    return True // everything is true except for an IntVal of zero
+
+    def intVal(self):
+        raise RuntimeException(self + ": not an Int")
+
+    def listVal(self):
+        raise RuntimeException(self + ": not a List")
+
+    def classVal(self)
+        raise RuntimeException(self + ": not a Class")
+
+    def objectVal(self):
+        raise RuntimeException(self + ": not an Object")
+
+
+    def listNode(self):
+        raise RuntimeException(self + ": not a nonempty List")
+
+    def isList():
+	    return False
+
+    def isObject():
+	    return False
+
+    def isClass():
+        return False
+
+    def makeObject(self,objRef):
+        raise RuntimeException("new " + self + ": not a class")
+
+    def putc(self):
+	    return self.toString()
+  
+%%%
+
+IntVal
+%%%
+
+class IntVal(Val):
+
+    val = None
+    
+    def __init__(self, s):
+        self.val = s
+
+    def intVal(self):
+        return self
+
+    def isTrue():
+        return val != 0
+
+    def putc():
+	return "" + val
+    
+    def toString():
+        return "" + val
+
+%%%
+
+ProcVal
+%%%
+
+class ProcVal(Val):
+
+    formals = None
+    nargs = None
+    body = None
+    env = None
+
+    def __init__(self, formals, body, env):
+        self.formals = formals
+        self.nargs = formals.varList.size()
+        self.body = body
+        self.env = env
+
+    def apply(valList):
+        if valList.size() != nargs
+            raise RuntimeException("formals/arguments number mismatch")
+        refList = Ref.valsToRefs(valList)
+        bindings = Bindings(formals.varList, refList)
+        nenv = env.extendEnvRef(bindings)
+        return body.eval(nenv)
+
+    def procVal(self):
+        return self
+
+    def env():
+        return env
+
+    def toString():
+        ret = "proc(";
+        sep = "";
+        for t in formals.varList:
+            s = t.toString()
+            ret += sep + s
+            sep = ","
+        ret += ")"
+        return ret
+
+%%%
+
+NilVal
+%%%
+
+class NilVal(Val)
+
+    def isTrue():
+        return False
+
+    def toString():
+        return "nil"
+
+%%%
