@@ -1,18 +1,16 @@
 ClassVal
 %%%
 
-public abstract class ClassVal extends Val {
+class ClassVal(Val):
 
-    public abstract ObjectVal makeObject(Ref objRef);
+    def makeObject(objRef):
+        pass
 
-    public ClassVal classVal() {
-        return this;
-    }
+    def classVal(self):
+        return self
 
-    public boolean isClass() {
-        return true;
-    }
-}
+    def isClass():
+        return True
 
 %%%
 
@@ -20,157 +18,135 @@ public abstract class ClassVal extends Val {
 # passed to its constructor
 EnvClass
 %%%
-import java.util.*;
 
-public class EnvClass extends ClassVal {
+def EnvClass(ClassVal):
 
-    public Env staticEnv;
+    staticEnv = None
 
-    public EnvClass(Env env) {
-        staticEnv = env; // the environment inherited by all subclasses
-    }
+    def __init__(self, env):
+        self.staticEnv = env // the environment inherited by all subclasses
 
-    public Env env() {
-        return staticEnv;
-    }
+    def env(self):
+        return self.staticEnv
 
     // Observe that the environment of objects created with 'new ...'
-    // always end up extending the static environment of this class.
+    // always end up extending the static environment of self class.
     // The 'objRef' reference will eventually be set to the object
     // being created.
-    public ObjectVal makeObject(Ref objRef) {
-        // start with the static environment of this class
-        Env env = staticEnv;
+    def makeObject(self, objRef):
+        // start with the static environment of self class
+        env = self.staticEnv
         // add the field binding 'self' to refer to the base object (deep)
-        Bindings fieldBindings = new Bindings();
-        env = env.extendEnvRef(fieldBindings); // this object's environment
-        fieldBindings.add("self", objRef);                // deep
-        return new ObjectVal(env);
-    }
+        fieldBindings = Bindings()
+        env = env.extendEnvRef(fieldBindings) // self object's environment
+        fieldBindings.append("self", objRef)                // deep
+        return ObjectVal(env)
 
-    public String toString() {
-        // return "class:" + staticEnv.getDepth();
-        return "class";
-    }
+    def toString():
+        // return "class:" + staticEnv.getDepth()
+        return "class"
 
-}
 %%%
 
 StdClass
 %%%
-import java.util.*;
 
-public class StdClass extends ClassVal {
+class StdClass(ClassVal):
 
-    public ClassVal superClass;  // an EnvClass (top-level) or a StdClass
-    public Bindings staticBindings; 
-    public Fields fields;
-    public Methods methods;
-    public Env staticEnv;
+    superClass = None  // an EnvClass (top-level) or a StdClass
+    staticBindings = None
+    fields = None
+    methods = None
+    staticEnv = None
 
-    public StdClass(
-            Env env,             // the environment where this class is created
-            ClassVal superClass, // evaluated by ClassExp
-            Statics statics,     // static variable definitions
-            Fields fields,       // field declarations
-            Methods methods) {   // method definitions
-        this.superClass = superClass;
-        this.fields = fields;
-        this.methods = methods;
+    def __init__(self,
+            env,             // the environment where self class is created
+            superClass, // evaluated by ClassExp
+            statics,     // static variable definitions
+            fields,       // field declarations
+            methods):  // method definitions
+        self.superClass = superClass
+        self.fields = fields
+        self.methods = methods
 	// my static environment starts with the superclass environment
-        staticEnv = superClass.env();
-        // the staticBindings field is used to create instances of this class
-        staticBindings = new Bindings();
-        staticEnv = staticEnv.extendEnvRef(staticBindings);
+        self.staticEnv = superClass.env()
+        // the staticBindings field is used to create instances of self class
+        self.staticBindings = new Bindings()
+        self.staticEnv = staticEnv.extendEnvRef(staticBindings)
         // initially create bindings for these static symbols ...
-        staticBindings.add("!@", new ValRef(new ObjectVal(env))); // not a var
-        staticBindings.add("myclass", new ValRef(this));
-        staticBindings.add("superclass", new ValRef(superClass));
+        staticBindings.append("!@", ValRef(ObjectVal(env))) // not a var
+        staticBindings.append("myclass", ValRef(self))
+        staticBindings.append("superclass", ValRef(superClass))
         // The static RHS expressions are evaluated in the modified
         // staticEnv that includes the bindings for myclass, superclass.
         // New static bindings are added as they are created,
         // as in top-level defines
-        statics.addStaticBindings(staticBindings, staticEnv);
-    }
+        statics.addStaticBindings(staticBindings, staticEnv)
 
-    public Env env() {
-        return staticEnv;
-    }
+    def env(self):
+        return self.staticEnv
 
-    public ObjectVal makeObject(Ref objRef) {
+    def makeObject(self, objRef):
         // System.err.println("... in makeObject ...");
         // create the parent object first (recursively)
-        ObjectVal parent = superClass.makeObject(objRef);
+        parent = self.superClass.makeObject(objRef)
 
-        // this object's environment extends the parent object's environment
-        Env env = parent.objectEnv;
+        // self object's environment extends the parent object's environment
+        env = parent.objectEnv
 
-        // add this class's static bindings (including those for myclass, etc)
-        env = env.extendEnvRef(staticBindings);
+        // add self class's static bindings (including those for myclass, etc)
+        env = env.extendEnvRef(staticBindings)
 
         // the fields come next
-        Bindings fieldBindings = new Bindings();
-        env = env.extendEnvRef(fieldBindings);
-        // bind all of this object's instance fields to nil
-        for (Token t : fields.varList) {
-              String s = t.toString();
-              fieldBindings.add(s, new ValRef(Val.nil));
-        }
-        // bind all this object's methods as in letrec
+        fieldBindings = Bindings()
+        env = env.extendEnvRef(fieldBindings)
+        // bind all of self object's instance fields to nil
+        for t in fields.varList:
+            s = t.toString()
+            fieldBindings.append(s, ValRef(Val.nil))
+        // bind all self object's methods as in letrec
         // don't add any bindings if there are no method declarations
-        if (methods.varList.size() > 0) {
-            LetrecDecls methodDecls =
-                new LetrecDecls(methods.varList, methods.procList);
-            env = methodDecls.addBindings(env);
-        }
+        if methods.varList.size() > 0:
+            methodDecls = LetrecDecls(methods.varList, methods.procList)
+            env = methodDecls.addBindings(env)
 
         // create the object and return it
         // bind 'super' field to the parent object
-        fieldBindings.add("super", new ValRef(parent)); // parent object
+        fieldBindings.append("super", ValRef(parent)) // parent object
         // bind 'self' field to the base object being created
         // (to speed up lookups)
-        fieldBindings.add("self", objRef); // deep
-        // bind 'this' field to this object environment
-        ObjectVal objectVal = new ObjectVal(env);
-        fieldBindings.add("this", new ValRef(objectVal)); // shallow
-        return objectVal;
-    }
+        fieldBindings.append("self", objRef) // deep
+        // bind 'self' field to self object environment
+        objectVal = ObjectVal(env)
+        fieldBindings.append("self", ValRef(objectVal)) // shallow
+        return objectVal
 
-    public String toString() {
-        return "class";
-    }
+    def toString():
+        return "class"
 
-}
 %%%
 
-# an object that captures the environment in which this object is created
+# an object that captures the environment in which self object is created
 ObjectVal
 %%%
-import java.util.*;
 
-public class ObjectVal extends Val {
+class ObjectVal(Val):
 
-    public Env objectEnv;     // this object's environment
+    objectEnv = None     // self object's environment
 
-    public ObjectVal(Env env) {
-        this.objectEnv = env;
-    }
+    def __init__(self, env):
+        self.objectEnv = env
 
-    public ObjectVal objectVal() {
-        return this;
-    }
+    def objectVal(self):
+        return self
 
-    public boolean isObject() {
-        return true;
-    }
+    def isObject():
+        return True
     
-    public Env env() {
-        return objectEnv;
-    }
+    def env(self):
+        return self.objectEnv
 
-    public String toString() {
-        return "object";
-    }
+    def toString():
+        return "object"
 
-}
 %%%

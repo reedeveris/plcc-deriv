@@ -3,7 +3,7 @@
 Program
 %%%
 
-    public static Env initEnv = Env.initEnv();
+    initEnv = Env.initEnv()
 
 %%%
 
@@ -11,531 +11,506 @@ Define
 %%%
     // notice that calling toString triggers a modification
     // of the initial environment
-    public String toString() {
-        String id = var.toString();
-        Val val = exp.eval(initEnv);
-        initEnv.addFirst(new Binding(id, new ValRef(val)));
-        return id; // return *something*
-    }
+    def toString():
+        id = var.toString():
+        val = exp.eval(self.initEnv)
+        initEnv.addFirst(Binding(id, ValRef(val)))
+        return id // return *something*
 %%%
 
 Eval
 %%%
-    public String toString() {
-        return exp.eval(initEnv).toString();
-    }
+    def toString():
+        return exp.eval(initEnv).toString()
 %%%
 
 Exp
 %%%
-    public abstract Val eval(Env env);
+    def eval(env):
+        pass
 %%%
 
 ExitExp
 %%%
-    public Val eval(Env env) {
-        throw new RuntimeException("...exiting...");
-    }
+    def eval(env):
+        raise RuntimeException("...exiting...")
 %%%
 
 PrimappExp
 %%%
 
-    public String toString() {
-        return prim.toString()+ "(" + rands + ")";
-    }
+    def toString():
+        return prim.toString()+ "(" + self.rands + ")"
 
-    public Val eval(Env env) {
+    def eval(env):
         // evaluate the terms in the expression list
         // and apply the prim to the array of integer results
-        List<Val> valList = rands.evalRands(env);
-        Val [] va = Val.toArray(valList);
-        return prim.apply(va);
-    }
+        valList = self.rands.evalRands(env)
+        va = Val.toArray(valList)
+        return prim.apply(va)
 
 %%%
 
 LitExp
 %%%
 
-    public Val eval(Env env) {
-        return new IntVal(lit.toString());
-    }
+    def eval(env):
+        return IntVal(lit.toString())
 
-    public String toString() {
-        return lit.toString();
-    }
+    def toString():
+        return lit.toString()
+
 
 %%%
 
 ChrExp
 %%%
-    public Val eval(Env env) {
-        return new IntVal(chr.toString().charAt(1));
-    }
+    def eval(self, env):
+        return IntVal(self.chr.toString()[1])
 
-    public String toString() {
-        return chr.toString();
-    }
+    def toString(self, ):
+        return self.chr.toString()
+
 %%%
 
 StrngExp
 %%%
-    public Val eval(Env env) {
-        String s = strng.toString();
-        int len = s.length()-1;
-        LinkedList<Character> chars = new LinkedList<Character>();
-        // We know that s.charAt(0) is '"'
-        // and that s.charAt(len) is '"'
-        int pos = 1;
-        while (pos < len) {
-            char c = s.charAt(pos++);
-            if (c == '\\') {
+    def eval(env):
+        s = strng.toString()
+        len = s.length()-1
+        chars = []
+        // We know that s[0] is '"'
+        // and that s[len] is '"'
+        pos = 1
+        while pos < len:
+            c = s[pos++]
+            if c == '\\':
                 // escape!
-                c = s.charAt(pos++);
-                switch(c) {
-                case 'a' : c = 7; break;
-                case 'b' : c = 8;  break;
-                case 't' : c = 9;  break;
-                case 'n' : c = 10; break;
-                case 'f' : c = 12; break;
-                case 'r' : c = 13; break;
-                default  : break;
-                }
-            }
-            chars.add(0, c); // add to beginning of list
-        }
+                c = s.charAt(pos++)
+                match c:
+                    case 'a':
+                        c = 7
+                        break
+                    case 'b':
+                        c = 8
+                        break
+                    case 't':
+                        c = 9
+                        break
+                    case 'n':
+                        c = 10
+                        break
+                    case 'f':
+                        c = 12
+                        break
+                    case 'r':
+                        c = 13
+                        break
+                    default :
+                        break
+            chars.insert(0, c) // add to beginning of list
         // chars is in reverse order -- now build a ListVal in proper order
-        ListVal lst = Val.listNull;
-        for (Character c : chars) {
-            lst = lst.add(new IntVal(c));
-        }
-        return lst;
-    }
+        lst = Val.listNull
+        for c in chars:
+            lst = lst.append(IntVal(c))
+        return lst
 
-    public String toString() {
-        return strng.toString();
-    }
+    def toString():
+        return strng.toString()
+
 %%%
 
 IfExp
 %%%
-    public Val eval(Env env) {
-        Val testVal = testExp.eval(env);
-        if (testVal.isTrue())
-            return trueExp.eval(env);
-        else
-            return falseExp.eval(env);
-    }
+    def eval(env)
+        testVal = testExp.eval(env)
+        if testVal.isTrue():
+            return trueExp.eval(env)
+        else:
+            return falseExp.eval(env)
 
-    public String toString() {
-        return "if " + testExp + " then " + trueExp + " else " +falseExp;
-    }
+    def toString()
+        return "if " + testExp + " then " + trueExp + " else " +falseExp
+
 %%%
 
 VarExp
 %%%
 
-    public Val eval(Env env) {
-        return env.applyEnv(var);
-    }
+    def eval(env):
+        return env.applyEnv(var)
 
-    public String toString() {
-        return var.toString();
-    }
+    def toString():
+        return var.toString()
 
 %%%
 
 LetExp
 %%%
-    public Val eval(Env env) {
-        Env nenv = letDecls.addBindings(env);
-        return exp.eval(nenv);
-    }
+    def eval(Env env):
+        nenv = letDecls.addBindings(env)
+        return exp.eval(nenv)
 
-    public String toString() {
-        return " ...LetExp... ";
-    }
+    def toString():
+        return " ...LetExp... "
 %%%
 
 LetrecExp
 %%%
-    public Val eval(Env env) {
-        Env nenv = letrecDecls.addBindings(env);
-        return exp.eval(nenv);
-    }
+    def eval(env):
+        nenv = letrecDecls.addBindings(env)
+        return exp.eval(nenv)
 
-    public String toString() {
-        return " ...LetrecExp... ";
-    }
+    def toString():
+        return " ...LetrecExp... "
+
 %%%
 
 ProcExp
 %%%
-    public Val eval(Env env) {
-        return proc.makeClosure(env);
-    }
+    def eval(env):
+        return proc.makeClosure(env)
 
-    public String toString() {
-        return " ...ProcExp... ";
-    }
+    def toString():
+        return " ...ProcExp... "
+
 %%%
 
 ListExp
 %%%
-    public Val eval(Env env) {
-        List<Val> valList = rands.evalRands(env);
-        ListVal listVal = Val.listNull;
-        int n = valList.size();
+    def eval(env):
+        valList = rands.evalRands(env)
+        listVal = Val.listNull
+        n = valList.size()
         // process the elements in reverse order
-        while (n > 0)
-            listVal = new ListNode(valList.get(--n), listVal);
-        return listVal;
-    }
+        while n > 0:
+            listVal = ListNode(valList.get(--n), listVal)
+        return listVal
 
-    public String toString() {
-        return " ...ListExp... ";
-    }
+    def toString():
+        return " ...ListExp... "
+
 %%%
 
 ClassExp
 %%%
-    public Val eval(Env env) {
-        return classDecl.eval(env);
-    }
+    def eval(env):
+        return classDecl.eval(env)
+
 
 %%%
 
 ClassDecl
 %%%
-    public Val eval(Env env) {
-        ClassVal superClass = ext.toClassVal(env);
-        return new StdClass(env, superClass, statics, fields, methods);
-    }
+    def eval(env):
+        superClass = ext.toClassVal(env)
+        return StdClass(env, superClass, statics, fields, methods)
+
 %%%
 
 Statics
 %%%
     // Add new bindings to the static bindings -- behaves like top-level
     // defines.
-    public void addStaticBindings(Bindings staticBindings, Env staticEnv) {
-        Iterator<Token> varIter = varList.iterator(); // LHS identifiers
-        Iterator<Exp> expIter = expList.iterator();    // RHS expressions
-        while(varIter.hasNext()) {
-            Token var = varIter.next();
-            String id = var.toString(); // the LHS identifier
-            Exp exp = expIter.next();    // the RHS expression
-            Val val = exp.eval(staticEnv);
-            Binding b = new Binding(id, new ValRef(val));
-            staticBindings.addFirst(b);
-        }
-    }
+    def addStaticBindings(Bindings staticBindings, Env staticEnv):
+        varIter = iter(varList) // LHS identifiers
+        expIter = iter(expList)    // RHS expressions
+        while next(varIter) not None:
+            var = next(varIter)
+            id = var.toString() // the LHS identifier
+            exp = next(expIter)    // the RHS expression
+            val = exp.eval(staticEnv)
+            b = Binding(id, ValRef(val))
+            staticBindings.addFirst(b)
+
 %%%
 
 NewExp
 %%%
-    public Val eval(Env env) {
+    def eval(env):
         // get the class from which this object will be created
-        Val val = exp.eval(env);
+        val = exp.eval(env)
         // create a reference to a dummy value (nil)
-        Ref objRef = new ValRef(Val.nil);
+        objRef = ValRef(Val.nil)
         // let the class create the object
-        ObjectVal objectVal = val.makeObject(objRef);
+        objectVal = val.makeObject(objRef)
         // set the reference to the newly created object
-        return objRef.setRef(objectVal);
-    }
+        return objRef.setRef(objectVal)
+
 %%%
 
 AppExp
 %%%
 
-    public Val eval(Env env) {
-        Val p = exp.eval(env);
-        List<Val> valList = rands.evalRands(env);
-        return p.apply(valList);
-    }
+    def eval(env):
+        p = exp.eval(env)
+        valList = rands.evalRands(env)
+        return p.apply(valList)
 
-    public String toString() {
-        return " ...AppExp... ";
-    }
+    def toString():
+        return " ...AppExp... "
 
 %%%
 
 SeqExp
 %%%
-    public Val eval(Env env) {
-        Val v = exp.eval(env);
-        for (Exp e : seqExps.expList)
-            v = e.eval(env);
-        return v;
-    }
+    def eval(Env env):
+        v = exp.eval(env)
+        for e in seqExps.expList:
+            v = e.eval(env)
+        return v
 
-    public String toString() {
-        return " ...SeqExp... ";
-    }
+    def toString():
+        return " ...SeqExp... "
 
 %%%
 
 SetExp
 %%%
-    public Val eval(Env env) {
+    def eval(env):
         // return loc.getEnv(env).applyEnvRef(var).setRef(exp.eval(env));
-        Env nenv = loc.getEnv(env);
-        Ref ref = nenv.applyEnvRef(var);
-        Val v = exp.eval(env); 
-        return ref.setRef(v);
-    }
+        nenv = loc.getEnv(env)
+        ref = nenv.applyEnvRef(var)
+        v = exp.eval(env);
+        return ref.setRef(v)
+
 %%%
 
 Loc
 %%%
-    public abstract Env getEnv(Env env);
+    def getEnv(env):
+        pass
 %%%
 
 ObjLoc
 %%%
-    public Env getEnv(Env env) {
-        Val v = exp.eval(env);
-        return v.env();
-    }
+    def getEnv(env):
+        v = exp.eval(env)
+        return v.env()
+
 %%%
 
 SimpleLoc
 %%%
-    public Env getEnv(Env env) {
-        return env;
-    }
+    def getEnv(env):
+        return env
+
 %%%
 
 EnvExp
 %%%
-    public Val eval(Env env) {
-        Val v = vExp.eval(env);
-        return eExp.eval(v.env());
-    }
+    def eval(env):
+        v = vExp.eval(env)
+        return eExp.eval(v.env())
 
 %%%
 
 EenvExp
 %%%
-    public Val eval(Env env) {
-        Val v = exp.eval(env);      // the environment object
-        return mangle.eval(v, env);
-    }
+    def eval(env):
+        v = exp.eval(env)      // the environment object
+        return mangle.eval(v, env)
+
 %%%
 
 BangAtExp
 %%%
-    public Val eval(Env env) {
-        return env.applyEnv("!@");
-    }
+    def eval(env):
+        return env.applyEnv("!@")
+
 %%%
 
 Mangle
 %%%
-    public Val eval(Val v, Env env) {
-        Iterator<Exp> expIter = expList.iterator();
-        Iterator<Rands> randsIter = randsList.iterator();
-        while (expIter.hasNext()) {
+    def eval(v, env):
+        expIter = iter(expList)
+        randsIter = iter(randsList)
+        while next(expIter) not None:
             // expIter.next() ProcExp to apply
             // randsIter.next() are the method rands -- evaluated in env
             // v.env() is the environment in which to build the ProcVal
-            Val p = expIter.next().eval(v.env());
-            List<Val> valList = randsIter.next().evalRands(env);
-            v = p.apply(valList);
-        }
-        return v;
-    }
+            p = next(expIter).eval(v.env())
+            valList = next(randsIter).evalRands(env)
+            v = p.apply(valList)
+        return v
+
 %%%
 
 WithExp
 %%%
-    public Val eval(Env env) {
-        return new EnvExp(vExp, eExp).eval(env);
-    }
+    def eval(env):
+        return EnvExp(vExp, eExp).eval(env)
+
 %%%
 
 NilExp
 %%%
-    public Val eval(Env env) {
-        return Val.nil;
-    }
+    def eval(env):
+        return Val.nil
 
 %%%
 
 SendExp
 %%%
 
-    public Val eval(Env env) {
-        Val v = objExp.eval(env);
-        Val p = procExp.eval(v.env()); // in the object env
-        List<Val> valList = rands.evalRands(env); // in calling env
-        return p.apply(valList);
-    }
+    def eval(env):
+        v = objExp.eval(env)
+        p = procExp.eval(v.env()) // in the object env
+        valList = rands.evalRands(env) // in calling env
+        return p.apply(valList)
 
-    public String toString() {
-        return " ...SendExp... ";
-    }
+    def toString():
+        return " ...SendExp... "
 
 %%%
 
 AtExp
 %%%
-    public Val eval(Env env) {
-        return new ObjectVal(env);
-    }
+    def eval(env):
+        return ObjectVal(env)
 
 %%%
 
 AtAtExp
 %%%
-    public Val eval(Env env) {
-        System.out.println(env.toString());
-        return new ObjectVal(env);
-    }
+    def eval(env):
+        System.out.println(env.toString())
+        return ObjectVal(env)
+
 %%%
 
 DisplayExp
 %%%
-    public Val eval(Env env) {
-        Val v = exp.eval(env);
-        System.out.print(v);
-        return v;
-    }
+    def eval(env):
+        v = exp.eval(env)
+        System.out.print(v)
+        return v
 
 %%%
 
 Display1Exp
 %%%
-    public Val eval(Env env) {
-        Val v = exp.eval(env);
-        System.out.print(v+" ");
-        return v;
-    }
+    def eval(env):
+        v = exp.eval(env)
+        System.out.print(v+" ")
+        return v
 
 %%%
 
 NewlineExp
 %%%
-    public Val eval(Env env) {
-        System.out.println();
-        return Val.nil;
-    }
+    def eval(env):
+        System.out.println()
+        return Val.nil
 
 %%%
 
 PutcExp
 %%%
-    public Val eval(Env env) {
-        Val v = exp.eval(env);
-        System.out.print(v.putc());
-        return Val.nil;
-    }
+    def eval(env):
+        v = exp.eval(env)
+        System.out.print(v.putc())
+        return Val.nil
+
 %%%
 
 ErrorExp
 %%%
-    public Val eval(Env env) {
-        Val val = exp.eval(env);
-        throw new RuntimeException("error: " + val);
-    }
+    def eval(env):
+        val = exp.eval(env)
+        raise RuntimeException("error: " + val)
+
 %%%
 
 PerrorExp
 %%%
-    public Val eval(Env env) {
-        String str = strng.toString();
-        int len = str.length();
-        str = str.substring(1,len-1);
-        throw new RuntimeException("error: " + str);
-    }
+    def eval(env):
+        str = strng.toString()
+        len = str.length()
+        str = str.substring(1,len-1)
+        raise RuntimeException("error: " + str)
+
 %%%
 
 Ext
 %%%
-    public abstract ClassVal toClassVal(Env env);
+    def toClassVal(env):
+        pass
 %%%
 
 Ext0
 %%%
 
-    public ClassVal toClassVal(Env env) {
-        return new EnvClass(Program.initEnv);
-    }
+    def toClassVal(env):
+        return EnvClass(Program.initEnv)
 
 %%%
 
 Ext1
 %%%
-    public ClassVal toClassVal(Env env) {
-        Val v = exp.eval(env);
-        return v.classVal();
-    }
+    def toClassVal(env):
+        v = exp.eval(env)
+        return v.classVal()
+
 %%%
 
 Proc
 %%%
-    public Val makeClosure(Env env) {
-        return new ProcVal(formals, exp, env);
-    }
+    def makeClosure(env):
+        return ProcVal(formals, exp, env)
 
 %%%
 
 LetDecls
 %%%
-    public Env addBindings(Env env) {
-        Rands rands = new Rands(expList);
-        List<Val> valList = rands.evalRands(env);
-        List<Ref> refList = Ref.valsToRefs(valList);
-        Bindings bindings = new Bindings(varList, refList);
-        return env.extendEnvRef(bindings);
-    }
+    def addBindings(env):
+        rands = Rands(expList)
+        valList = rands.evalRands(env)
+        refList = Ref.valsToRefs(valList)
+        bindings = Bindings(varList, refList)
+        return env.extendEnvRef(bindings)
 
-    public String toString() {
-        return " ...LetDecls... ";
-    }
+    def toString():
+        return " ...LetDecls... "
+
 %%%
 
 LetrecDecls
 %%%
 
-    public Env addBindings(Env env) {
-        Env nenv = env.extendEnvRef(null); // no bindings yet
-        List<Val> valList = new ArrayList<Val>();
-        for (Proc p : procList)
-            valList.add(p.makeClosure(nenv));
-        List<Ref> refList = Ref.valsToRefs(valList);
-        Bindings bindings = new Bindings(varList, refList);
-        nenv.replaceBindings(bindings);
-        return nenv;
-    }
+    def addBindings(env):
+        nenv = env.extendEnvRef(null) // no bindings yet
+        valList = []
+        for p in procList:
+            valList.append(p.makeClosure(nenv))
+        refList = Ref.valsToRefs(valList)
+        Bindings bindings = Bindings(varList, refList)
+        nenv.replaceBindings(bindings)
+        return nenv
 
-    public Bindings toBindingsRef(Env env) {
-        List<Ref> refList = new ArrayList<Ref>();
-        for (Proc p : procList)
-            refList.add(new ValRef(p.makeClosure(env)));
-        return new Bindings(varList, refList);
-    }
+    def toBindingsRef(env):
+        refList = []
+        for p in procList:
+            refList.append(ValRef(p.makeClosure(env)))
+        return Bindings(varList, refList)
+
 %%%
 
 Rands
 %%%
-    public String toString() {
-        String s = "";   // the string to return
-        String sep = ""; // no separator for the first expression
+    def toString():
+        s = ""   // the string to return
+        sep = "" // no separator for the first expression
         // get all of the expressions in the expression list
-        for (Exp e : expList) {
-            s += sep + e;
-            sep = ",";   // commas separate the rest of the expressions
-        }
-        return s;
-    }
+        for e in expList:
+            s += sep + e
+            sep = ","   // commas separate the rest of the expressions
+        return s
 
-    public List<Val> evalRands(Env env) {
-        List<Val> valList = new ArrayList<Val>();
-        for (Exp e : expList)
-            valList.add(e.eval(env));
-        return valList;
-    }
+    def evalRands(env):
+        valList = []
+        for e in expList:
+            valList.append(e.eval(env))
+        return valList
 
 %%%

@@ -667,13 +667,13 @@ def makeAbstractStub(base):
     #{base}:import#
     from ABC import ABC
 
-    class {base}({ext}, ABC) #{base}:class# :
+    class {base}({ext}, ABC) :
 
-        $className = "{base}"
-        def parse(Scan scn$, Trace trace$):
-            Token t$ = scn$.cur()
-            Token.Match match$ = t$.match
-            match match$:
+        __className = "{base}"
+        def parse(scn, trace):
+            Token t = scn.cur()
+            Token.Match match = t.match
+            match match:
     {cases}
             case _:
                 raise PLCCException(
@@ -778,10 +778,10 @@ def makeStub(cls):
     #{cls}:import#
 
     # {ruleString}
-    class {cls}({ext}) #{cls}:class# :
+    class {cls}({ext}):
 
-        $className = "{cls}"
-        $ruleString =
+        __className = "{cls}"
+        __ruleString =
             "{ruleString}"
 {decls}
 
@@ -789,9 +789,9 @@ def makeStub(cls):
             #{cls}:init#
 {inits}
 
-        def parse(Scan scn$, Trace trace$):
-            if (trace$ not null):
-                trace$ = trace$.nonterm("{lhs}", scn$.lno)
+        def parse(scn, trace):
+            if trace not null:
+                trace = trace.nonterm("{lhs}", scn.lno)
         {parse}
 
         #{cls}#

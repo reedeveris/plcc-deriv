@@ -1,196 +1,165 @@
 # Environment-related classes
 Env
 %%%
-import java.util.*;
 
-public abstract class Env {
+class Env:
 
-    public static Env initEnv() {
+    def initEnv():
         // an environment with an empty local environment
-        return new EnvNode(new Bindings(), new EnvNull());
-    }
+        return EnvNode(Bindings(), EnvNull())
 
-    public abstract Ref applyEnvRef(String sym);
-    public abstract void replaceBindings(Bindings bindings);
-    public abstract void add(Binding b);
-    public abstract void addFirst(Binding b);
+    def applyEnvRef(sym):
+        pass
+    def replaceBindings(bindings):
+        pass
+    def add(b):
+        pass
+    def addFirst(b):
+        pass
 
-    public Val applyEnv(String sym) {
-        return applyEnvRef(sym).deRef();
-    }
+    def applyEnv(sym):
+        return applyEnvRef(sym).deRef()
 
-    public Ref applyEnvRef(Token tok) {
-        return applyEnvRef(tok.toString());
-    }
+    def applyEnvRef(tok):
+        return applyEnvRef(tok.toString())
 
-    public Val applyEnv(Token tok) {
-        return applyEnv(tok.toString());
-    }
+    def applyEnv(tok):
+        return applyEnv(tok.toString())
 
-    public Env extendEnvRef(Bindings bindings) {
-        return new EnvNode(bindings, this);
-    }
+    def extendEnvRef(self, bindings):
+        return EnvNode(bindings, self)
 
-    public abstract String toString(int n);
-}
+    def toString(n):
+        pass
+
 %%%
 
 EnvNode
 %%%
-import java.util.*;
 
-public class EnvNode extends Env {
+class EnvNode(Env):
 
-    public Bindings bindings; // list of local bindings
-    public Env env;           // next set of bindings
+    bindings = [] // list of local bindings
+    env = None           // next set of bindings
     
     // create an environment 
-    public EnvNode(Bindings bindings, Env env) {
-        this.bindings = bindings;
-        this.env = env;
-    }
+    def __init__(self, bindings, env):
+        self.bindings = bindings
+        self.env = env
     
     // find the Ref corresponding to a given id
-    public Ref applyEnvRef(String sym) {
+    def applyEnvRef(sym):
         // first look in the local bindings
-        for (Binding b : bindings.bindingList) {
-            if (sym.equals(b.id))
-                return b.ref;
-        }
-        // if nothing left, we don't have a match in this list of bindings
-        return env.applyEnvRef(sym);
-    }
+        for b in bindings.bindingList:
+            if sym == b.id:
+                return b.ref
+        // if nothing left, we don't have a match in self list of bindings
+        return env.applyEnvRef(sym)
 
-    public void replaceBindings(Bindings bindings) {
-        this.bindings = bindings;
-    }
+    def replaceBindings(self, bindings):
+        self.bindings = bindings
 
-    public String toString(int n) {
-        return n + ":" + bindings.toString() + "\n" + env.toString(n+1);
-    }
+    def toString(n):
+        return n + ":" + bindings.toString() + "\n" + env.toString(n+1)
 
-    public String toString() {
-        return bindings.toString() + "\n" + env;
-    }
+    def toString(self):
+        return self.bindings.toString() + "\n" + env
 
-    public void add(Binding b) {
-        bindings.add(b);
-    }
+    def add(self, b):
+        self.bindings.append(b)
 
-    public void addFirst(Binding b) {
-        bindings.addFirst(b);
-    }
+    def addFirst(self, b):
+        self.bindings.insert(0,b)
 
-}
 %%%
 
 EnvNull
 %%%
-import java.util.*;
 
-public class EnvNull extends Env {
+class EnvNull(Env):
 
     // create an environment 
-    public EnvNull() {
-    }
+    def __init__(self):
+        pass
     
     // find the Ref corresponding to a given id
-    public Ref applyEnvRef(String sym) {
-        throw new RuntimeException("no binding for "+sym);
-    }
+    def applyEnvRef(sym):
+        raise RuntimeException("no binding for "+sym)
 
-    public void replaceBindings(Bindings bindings) {
-        throw new RuntimeException("no bindings to replace");
-    }
+    def replaceBindings(bindings):
+        raise RuntimeException("no bindings to replace")
 
-    public void add(Binding b) {
-        throw new RuntimeException("no bindings to add to");
-    }
+    def add(b):
+        raise RuntimeException("no bindings to add to")
 
-    public void addFirst(Binding b) {
-        throw new RuntimeException("no bindings to add to");
-    }
+    def addFirst(b):
+        raise RuntimeException("no bindings to add to")
 
-    public String toString(int n) {
-        return n + ":\n";
-    }
+    def toString(n):
+        return n + ":\n"
 
-    public String toString() {
-        return "\n";
-    }
-}
+    def toString():
+        return "\n"
+
 %%%
 
 Binding
 %%%
-public class Binding {
+class Binding:
 
-    public String id;
-    public Ref ref;
+    id = None
+    ref = None
 
-    public Binding(String id, Ref ref) {
-        this.id = id;
-        this.ref = ref;
-    }
+    def __init__(self, id, ref):
+        self.id = id
+        self.ref = ref
 
-    public String toString() {
-        return "[" + id + "->" + ref.deRef().toString() + "]";
-    }
+    def toString():
+        return "[" + id + "->" + ref.deRef().toString() + "]"
 
-}
 %%%
 
 Bindings
 %%%
-import java.util.*;
 
-public class Bindings {
+class Bindings:
 
-    public List<Binding> bindingList;
+    bindingList = None
 
     // create an empty list of bindings
-    public Bindings() {
-        bindingList = new ArrayList<Binding>();
-    }
+    def __init__(self):
+        self.bindingList = []
 
-    public Bindings(List<Binding> bindingList) {
-        this.bindingList = bindingList;
-    }
+    def __init__(self, bindingList):
+        self.bindingList = bindingList
 
     // idList is a list of Tokens/Strings
     // refList is a list of Refs
-    public Bindings(List<?> idList, List<Ref> refList) {
-        bindingList = new ArrayList<Binding>();
-        Iterator<?> idIterator = idList.iterator();
-        Iterator<Ref> refIterator = refList.iterator();
-        while (idIterator.hasNext()) {
-            String id = idIterator.next().toString();
-            Ref ref = refIterator.next();
-            bindingList.add(new Binding(id, ref));
-        }
-    }
+    def __init__(self, idList, refList):
+        self.bindingList = []
+        idIterator = iter(idList)
+        refIterator = iter(refList)
+        while next(idIterator) not None:
+            id = next(idIterator).toString()
+            ref = next(refIterator)
+            self.bindingList.append(Binding(id, ref))
 
-    public void add(String s, Ref r) {
-        bindingList.add(new Binding(s, r));
-    }
+    def add(self, s, r):
+        self.bindingList.append(Binding(s, r))
 
-    public void addFirst(Binding b) {
-        bindingList.add(0,b);
-    }
+    def addFirst(self, b):
+        self.bindingList.insert(0,b)
 
-    public void add(Binding b) {
-        bindingList.add(b);
-    }
+    def add(self, b):
+        self.bindingList.add(b)
 
-    public int size() {
-        return bindingList.size();
-    }
+    def size(self):
+        return self.bindingList.size()
 
-    public String toString() {
-        String s = "";
-        for (Binding b : bindingList)
-            s += " " + b;
-        return s;
-    }
-}
+    def toString(self):
+        s = ""
+        for b in self.bindingList:
+            s += " " + b
+        return s
+
 %%%
