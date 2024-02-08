@@ -5,7 +5,7 @@ Env
 class Env:
 
     def initEnv():
-        // an environment with an empty local environment
+        # an environment with an empty local environment
         return EnvNode(Bindings(), EnvNull())
 
     def applyEnvRef(sym):

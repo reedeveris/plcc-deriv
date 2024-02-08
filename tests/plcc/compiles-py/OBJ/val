@@ -18,7 +18,7 @@ class Val():
 	    raise RuntimeException("<" + self + ">: not an environment")
 
     def isTrue():
-	    return True // everything is true except for an IntVal of zero
+	    return True # everything is true except for an IntVal of zero
 
     def intVal(self):
         raise RuntimeException(self + ": not an Int")
@@ -108,8 +108,8 @@ class ProcVal(Val):
         return env
 
     def toString():
-        ret = "proc(";
-        sep = "";
+        ret = "proc("
+        sep = ""
         for t in formals.varList:
             s = t.toString()
             ret += sep + s

@@ -2,7 +2,7 @@
 #   Language SET with lists, characters, strings, classes, and objects.
 #   Includes comparison primitives '<?', '<=?', '>?', '>=', '<>?', and '=?'
 #   for IntVals.
-
+@Java
 
 
 # Lexical specification

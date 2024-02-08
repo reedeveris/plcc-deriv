@@ -24,6 +24,7 @@ import os
 import io
 import shutil
 import tempfile
+import Formatter
 argv = sys.argv[1:] # skip over the command-line argument
 
 # current file information
@@ -34,6 +35,11 @@ nlgen = None        # next line generator for Fname
 STD = []            # reserved names from Std library classes
 STDT = []           # token-related files in the Std library directory
 STDP = []           # parse/runtime-related files in the Std library directory
+SupportedLanguages = [
+                        'Python',
+                        'Java'
+                    ]
+lang = None
 
 flags = {}          # processing flags (dictionary)
 
@@ -145,6 +151,7 @@ def jsonAstInit():
                 flags['ParseJsonAst'] = 'ParseJsonAst'
 
 def lex(nxt):
+    global lang
     # print('=== lexical specification')
     # Handle any flags appearing at beginning of lexical spec section;
     # turn off when all flags have been processed
@@ -157,6 +164,10 @@ def lex(nxt):
         if len(line) == 0: # skip empty lines
             continue
         if line[0] == '#': # skip comments
+            continue
+        if line[0] == '@': # change output language
+            changeLang(line)
+            lang = getattr(Formatter, getFlag('language')+'Formatter')()
             continue
         if line[0] == '!': # handle a PLCC compile-time flag
             if flagSwitch:
@@ -237,7 +248,7 @@ def lex(nxt):
     lexFinishUp()
 
 def lexFinishUp():
-    global termSpecs, STDT
+    global termSpecs, STDT, SupportedLanguages
     if len(termSpecs) == 0:
         death('No tokens specified -- quitting')
     # first create the destination directory if necessary
@@ -245,15 +256,7 @@ def lexFinishUp():
         # don't write any files
         return
     dst = getFlag('language')
-    if dst == 'Python':
-        try:
-            os.mkdir(dst)
-            debug('[lexFinishUp] ' + dst + ': destination subdirectory created')
-        except FileExistsError:
-            debug('[lexFinishUp] ' + dst + ': destination subdirectory exists')
-        except:
-            death(dst + ': error creating destination subdirectory')
-    elif dst == 'Java':
+    if dst in SupportedLanguages:
         try:
             os.mkdir(dst)
             debug('[lexFinishUp] ' + dst + ': destination subdirectory created')
@@ -630,221 +633,54 @@ def saveCases(cls, fst):
     cases[cls] = fst
 
 def buildStubs():
-    global fields, derives, stubs
+    global fields, cases, derives, extends, stubs, lang
     for cls in derives:
         # make parser stubs for all abstract classes
         if cls in stubs:
             death('duplicate stub for abstract class {}'.format(cls))
         debug('[buildStubs] making stub for abstract class {}'.format(cls))
-        stubs[cls] = makeAbstractStub(cls)
+        caseList = []    # a list of strings,
+                        # either 'case XXX:'
+                        # or '    return Cls.parse(...);'
+        for clas in derives[cls]:
+            if len(cases[clas]) == 0:
+                death('class {} is unreachable'.format(cls))
+            for tok in cases[clas]:
+                caseList.append('case {}:'.format(tok))
+            caseList.append('    return {}.parse(scn$,trace$);'.format(clas))
+        stubs[cls] = lang.formatAbstractStub(cls,cases,caseList,nt2cls(startSymbol))
     for cls in fields:
         # make parser stubs for all non-abstract classes
+        sep = False
+        (lhs, rhs) = fields[cls]
+        ext = '' # assume not an extended class
+        # two cases: either cls is a repeating rule, or it isn't
+        if cls in rrule:
+            ruleType = '**='
+            sep = rrule[cls]
+            (fieldVars, parseString) = makeArbnoParse(cls,rhs,sep)
+            if sep != None:
+                rhs = rhs + ['+{}'.format(sep)]
+        else:
+            ruleType = '::='
+            (fieldVars, parseString) = makeParse(cls,rhs)
+            # two sub-cases: either cls is an extended class (with abstract base class) or it's a base class
+            if cls in extends:
+                if flags['language'] == 'Java':
+                    # ext = 'extends ' + extends[cls] + ' '
+                    ext = ' extends {}'.format(extends[cls])
+                elif flags['language'] == 'Python':
+                    ext = extends[cls]
+            else:
+                pass
+        ruleString = '{} {} {}'.format(lhs, ruleType, ' '.join(rhs))
         if cls in stubs:
             death('duplicate stub for class {}'.format(cls))
         debug('[buildStubs] making stub for non-abstract class {}'.format(cls))
-        stubs[cls] = makeStub(cls)
-
-def makeAbstractStub(base):
-    global cases
-    caseList = []    # a list of strings,
-                     # either 'case XXX:'
-                     # or '    return Cls.parse(...);'
-    for cls in derives[base]:
-        if len(cases[cls]) == 0:
-            death('class {} is unreachable'.format(cls))
-        for tok in cases[cls]:
-            caseList.append('case {}:'.format(tok))
-        caseList.append('    return {}.parse(scn$,trace$);'.format(cls))
-
-
-    if getFlag('language') == 'Python':
-        if base == nt2cls(startSymbol):
-            ext = '_Start'
-        else:
-            ext = ''
-        stubString = """\
-    #{base}:top#
-    #{base}:import#
-    from ABC import ABC
-
-    class {base}({ext}, ABC) :
-
-        __className = "{base}"
-        def parse(scn, trace):
-            Token t = scn.cur()
-            Token.Match match = t.match
-            match match:
-    {cases}
-            case _:
-                raise PLCCException(
-                    "Parse error",
-                    "{base} cannot begin with " + t$.errString()
-                )
-
-    #{base}#
-    """.format(cls=cls,
-            base=base,
-            ext=ext,
-            cases='\n'.join(indent(2, caseList))
-            )
-        return stubString
-
-
-    elif getFlag('language') == 'Java':
-        if base == nt2cls(startSymbol):
-            ext = ' extends _Start'
-        else:
-            ext = ''
-        stubString = """\
-    //{base}:top//
-    //{base}:import//
-    import java.util.*;
-
-    public abstract class {base}{ext} /*{base}:class*/ {{
-
-        public static final String $className = "{base}";
-        public static {base} parse(Scan scn$, Trace trace$) {{
-            Token t$ = scn$.cur();
-            Token.Match match$ = t$.match;
-            switch(match$) {{
-    {cases}
-            default:
-                throw new PLCCException(
-                    "Parse error",
-                    "{base} cannot begin with " + t$.errString()
-                );
-            }}
-        }}
-
-    //{base}//
-    }}
-    """.format(cls=cls,
-            base=base,
-            ext=ext,
-            cases='\n'.join(indent(2, caseList))
-            )
-        return stubString
-
-def makeStub(cls):
-    global fields, extends, rrule
-    # make a stub for the given non-abstract class
-    debug('[makeStub] making stub for non-abstract class {}'.format(cls))
-    sep = False
-    (lhs, rhs) = fields[cls]
-    ext = '' # assume not an extended class
-    # two cases: either cls is a repeating rule, or it isn't
-    if cls in rrule:
-        ruleType = '**='
-        sep = rrule[cls]
-        (fieldVars, parseString) = makeArbnoParse(cls, rhs, sep)
-        if sep != None:
-            rhs = rhs + ['+{}'.format(sep)]
-    else:
-        ruleType = '::='
-        (fieldVars, parseString) = makeParse(cls, rhs)
-        # two sub-cases: either cls is an extended class (with abstract base class) or it's a base class
-        if cls in extends:
-            if flags['language'] == 'Java':
-                # ext = 'extends ' + extends[cls] + ' '
-                ext = ' extends {}'.format(extends[cls])
-            elif flags['language'] == 'Python':
-                ext = extends[cls]
-        else:
-            pass
-    ruleString = '{} {} {}'.format(lhs, ruleType, ' '.join(rhs))
-    # fieldVars = makeVars(cls, rhs)
-    decls = []
-    inits = []
-    params = []
-    if flags['language'] == 'Java':
-        for (field, fieldType) in fieldVars:
-            decls.append('public {} {};'.format(fieldType, field))
-            inits.append('this.{} = {};'.format(field, field))
-            params.append('{} {}'.format(fieldType, field))
-    elif flags['language'] == 'Python':
-        for (field, fieldType) in fieldVars:
-            decls.append('{} = None'.format(field))
-            inits.append('self.{} = {}'.format(field, field))
-            params.append('{}'.format(field))
-    debug('[makeStub] cls={} decls={} params={} inits={}'.format(cls, decls, params, inits))
-    debug('[makeStub] rule: {}'.format(ruleString))
-    
-
-    if getFlag('language') == 'Python':
-        if cls == nt2cls(startSymbol):
-            ext = '_Start'
-        stubString = """\
-    #{cls}:top#
-    #{cls}:import#
-
-    # {ruleString}
-    class {cls}({ext}):
-
-        __className = "{cls}"
-        __ruleString =
-            "{ruleString}"
-{decls}
-
-        def __init__(self, {params}):
-            #{cls}:init#
-{inits}
-
-        def parse(scn, trace):
-            if trace not null:
-                trace = trace.nonterm("{lhs}", scn.lno)
-        {parse}
-
-        #{cls}#
-    """.format(cls=cls,
-            lhs=lhs,
-            ext=ext,
-            ruleString=ruleString,
-            decls='\n'.join(indent(2, decls)),
-            params=', '.join(params),
-            inits='\n'.join(indent(3, inits)),
-            parse=parseString)
-        return stubString
+        stubs[cls] = lang.formatStub(extends,cls,lhs,fieldVars,ruleString,parseString,nt2cls(startSymbol))
 
 
 
-    elif getFlag('language') == 'Java':
-        if cls == nt2cls(startSymbol):
-            ext = ' extends _Start'
-        stubString = """\
-    //{cls}:top//
-    //{cls}:import//
-    import java.util.*;
-
-    // {ruleString}
-    public class {cls}{ext} /*{cls}:class*/ {{
-
-        public static final String $className = "{cls}";
-        public static final String $ruleString =
-            "{ruleString}";
-
-{decls}
-        public {cls}({params}) {{
-            //{cls}:init//
-{inits}
-        }}
-
-        public static {cls} parse(Scan scn$, Trace trace$) {{
-            if (trace$ != null)
-                trace$ = trace$.nonterm("{lhs}", scn$.lno);
-    {parse}
-        }}
-
-    //{cls}//
-    }}
-    """.format(cls=cls,
-            lhs=lhs,
-            ext=ext,
-            ruleString=ruleString,
-            decls='\n'.join(indent(2, decls)),
-            params=', '.join(params),
-            inits='\n'.join(indent(3, inits)),
-            parse=parseString)
-        return stubString
 
 def indent(n, iList):
     ### make a new list with the old list items prepended with 4*n spaces
@@ -1240,6 +1076,14 @@ def processFlag(flagSpec):
                 raise Exception('improper debug flag value')
     flags[key] = val
     # print(flags)
+
+def changeLang(k):
+    global flags, SupportedLanguages
+    val = k[1:]
+    if val in SupportedLanguages:
+        flags['language'] = val
+    else:
+        death("Value for language is invalid or not supported.\nSupported languages: " + ' | '.join(SupportedLanguages))
 
 def getFlag(s):
     global flags
