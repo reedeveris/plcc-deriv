@@ -647,7 +647,7 @@ def buildStubs():
                 death('class {} is unreachable'.format(cls))
             for tok in cases[clas]:
                 caseList.append('case {}:'.format(tok))
-            caseList.append('    return {}.parse(scn$,trace$);'.format(clas))
+            caseList.append('\treturn {}.parse(scn$,trace$);'.format(clas))
         stubs[cls] = lang.formatAbstractStub(cls,cases,caseList,nt2cls(startSymbol))
     for cls in fields:
         # make parser stubs for all non-abstract classes
@@ -733,6 +733,7 @@ def makeArbnoParse(cls, rhs, sep):
     # rhs = rhs[:-1]   # remove the last item from the grammar rule (which has an underscore item)
     # create the parse statements to be included in the loop
     switchCases = [] # the token cases in the switch statement
+
     for item in rhs:
         (tnt, field) = defangRHS(item)
         if tnt == None:
@@ -758,57 +759,12 @@ def makeArbnoParse(cls, rhs, sep):
         fieldType = 'List<{}>'.format(baseType)
         fieldVars.append((field, fieldType))
         inits.append('{} {} = new ArrayList<{}>();'.format(fieldType, field, baseType))
-    switchCases = []
     if len(cases[cls]) == 0:
         deathLNO('class {} is unreachable'.format(cls))
     for item in cases[cls]:
         switchCases.append('case {}:'.format(item))
     returnItem = 'return new {}({});'.format(cls, ', '.join(args))
-    if sep == None:
-        # no separator
-        parseString = """\
-{inits}
-        while (true) {{
-            Token t$ = scn$.cur();
-            Token.Match match$ = t$.match;
-            switch(match$) {{
-{switchCases}
-{loopList}
-                continue;
-            default:
-                {returnItem}
-            }}
-        }}
-""".format(inits='\n'.join(indent(2, inits)),
-           switchCases='\n'.join(indent(3, switchCases)),
-           loopList='\n'.join(indent(4, loopList)),
-           returnItem=returnItem)
-    else:
-        # there's a separator
-        parseString = """\
-{inits}
-        // first trip through the parse
-        Token t$ = scn$.cur();
-        Token.Match match$ = t$.match;
-        switch(match$) {{
-{switchCases}
-            while(true) {{
-{loopList}
-                t$ = scn$.cur();
-                match$ = t$.match;
-                if (match$ != Token.Match.{sep})
-                    break; // not a separator, so we're done
-                scn$.match(match$, trace$);
-            }}
-        }} // end of switch
-        {returnItem}
-""".format(inits='\n'.join(indent(2, inits)),
-           switchCases='\n'.join(indent(2, switchCases)),
-           loopList='\n'.join(indent(4, loopList)),
-           returnItem=returnItem,
-           sep=sep)
-    debug('[makeArbnoParse] fieldVars={}'.format(fieldVars))
-    return (fieldVars, parseString)
+    return lang.formatArbnoParse(cls, rhs, sep, inits, args, loopList, fieldVars, fieldSet, rhsString, switchCases, returnItem)
 
 def buildStart():
     global startSymbol
@@ -1109,7 +1065,6 @@ def defang(item):
     # item is either <xxx>, <xxx>:?yyy, or neither
     # xxx must be a nonterm or a token name
     global term # all token names
-    debug('[defang] item={}'.format(item))
     m = re.match(r'<(\w*#?)>(:?\w*)$', item)
     if m:
         xxx = m.group(1)

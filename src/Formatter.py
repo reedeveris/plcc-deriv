@@ -1,3 +1,4 @@
+from plcc import defangRHS
 
 class Formatter():
 
@@ -7,6 +8,8 @@ class Formatter():
     def formatAbstractStub(self,base,cases,nt2cls):
         pass
     def formatStub(self,extends,cls,lhs,fieldVars,ruleString,parseString,nt2cls):
+        pass
+    def formatArbnoParse(self, cls, rhs, sep, inits, args, loopList, fieldVars, fieldSet, rhsString, switchCases):
         pass
 
 
@@ -98,6 +101,50 @@ class {cls}({ext}):
                 inits='\n\t\t\t'.join(inits),
                 parse=parseString)
         return stubString
+
+    def formatArbnoParse(self, cls, rhs, sep, inits, args, loopList, fieldVars, fieldSet, rhsString, switchCases, returnItem):
+        if sep == None:
+            # no separator
+            parseString = """\
+{inits}
+while true:
+    t = scn.cur()
+    Token.Match match = t.match
+    match match:
+        {switchCases}
+            {loopList}
+            continue
+        default:
+            {returnItem}
+
+            """.format(inits='\n\t\t'.join(inits),
+            switchCases='\n\t\t'.join(switchCases),
+            loopList='\n\t\t\t'.join(loopList),
+            returnItem=returnItem)
+        else:
+            # there's a separator
+            parseString = """\
+{inits}
+# first trip through the parse
+t = scn.cur()
+Token.Match match = t.match
+    match match:
+        {switchCases}
+            while(true) {{
+                {loopList}
+                t = scn.cur()
+                match = t.match
+                if match != Token.Match.{sep}:
+                    break # not a separator, so we're done
+                scn.match(match, trace)
+        # end of switch
+    {returnItem}
+            """.format(inits='\n\t\t'.join(inits),
+            switchCases='\n\t\t'.join(switchCases),
+            loopList='\n\t\t\t\t'.join(loopList),
+            returnItem=returnItem,
+            sep=sep)
+        return (fieldVars, parseString)
 
 
 
@@ -197,3 +244,49 @@ public class {cls}{ext} /*{cls}:class*/ {{
                 inits='\n\t\t'.join(inits),
                 parse=parseString)
         return stubString
+
+def formatArbnoParse(self, cls, rhs, sep, inits, args, loopList, fieldVars, fieldSet, rhsString, switchCases, returnItem):
+    if sep == None:
+        # no separator
+        parseString = """\
+{inits}
+while (true) {{
+    Token t$ = scn$.cur();
+    Token.Match match$ = t$.match;
+    switch(match$) {{
+        {switchCases}
+        {loopList}
+        continue;
+    default:
+        {returnItem}
+    }}
+}}
+            """.format(inits='\n\t\t'.join(inits),
+           switchCases='\n\t\t\t'.join(switchCases),
+           loopList='\n\t\t\t\t'.join(loopList),
+           returnItem=returnItem)
+    else:
+        # there's a separator
+        parseString = """\
+{inits}
+// first trip through the parse
+Token t$ = scn$.cur();
+Token.Match match$ = t$.match;
+switch(match$) {{
+    {switchCases}
+    while(true) {{
+        {loopList}
+        t$ = scn$.cur();
+        match$ = t$.match;
+        if (match$ != Token.Match.{sep})
+            break; // not a separator, so we're done
+        scn$.match(match$, trace$);
+    }}
+}} // end of switch
+{returnItem}
+            """.format(inits='\n\t\t'.join(inits),
+           switchCases='\n\t\t'.join(switchCases),
+           loopList='\n\t\t\t\t'.join(loopList),
+           returnItem=returnItem,
+           sep=sep)
+    return (fieldVars, parseString)
