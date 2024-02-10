@@ -665,31 +665,11 @@ def buildStubs():
             ruleType = '::='
             (fieldVars, parseString) = makeParse(cls,rhs)
             # two sub-cases: either cls is an extended class (with abstract base class) or it's a base class
-            if cls in extends:
-                if flags['language'] == 'Java':
-                    # ext = 'extends ' + extends[cls] + ' '
-                    ext = ' extends {}'.format(extends[cls])
-                elif flags['language'] == 'Python':
-                    ext = extends[cls]
-            else:
-                pass
         ruleString = '{} {} {}'.format(lhs, ruleType, ' '.join(rhs))
         if cls in stubs:
             death('duplicate stub for class {}'.format(cls))
         debug('[buildStubs] making stub for non-abstract class {}'.format(cls))
         stubs[cls] = lang.formatStub(extends,cls,lhs,fieldVars,ruleString,parseString,nt2cls(startSymbol))
-
-
-
-
-def indent(n, iList):
-    ### make a new list with the old list items prepended with 4*n spaces
-    indentString = '    '*n
-    newList = []
-    for item in iList:
-        newList.append('{}{}'.format(indentString, item))
-    # print('### str={}'.format(str))
-    return newList
 
 def makeParse(cls, rhs):
     args = []
@@ -718,7 +698,7 @@ def makeParse(cls, rhs):
         fieldVars.append((field, fieldType))
     parseList.append('return new {}({});'.format(cls, ', '.join(args)))
     debug('[makeParse] parseList={}'.format(parseList))
-    parseString = '\n'.join(indent(2, parseList))
+    parseString = '\n\t\t'.join(parseList)
     return (fieldVars, parseString)
 
 def makeArbnoParse(cls, rhs, sep):
