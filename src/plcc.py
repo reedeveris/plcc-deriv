@@ -267,13 +267,12 @@ def lexFinishUp():
     else:
         death(dst + ': invalid value for language (must be "Python" or "Java")')
 
-
     if not getFlag('Token'):
         return # do not create any automatically generated scanner-related files
     libplcc = getFlag('libplcc')
     if not libplcc:
         death('illegal libplcc flag value')
-    std = libplcc + '/Std'
+    std = libplcc + '/Std/' + getFlag('language')
     try:
         os.mkdir(std)
     except FileExistsError:
@@ -395,7 +394,7 @@ def parFinishUp():
     # copy the Std parser-related files
     dst = getFlag('language')
     libplcc = getFlag('libplcc')
-    std = libplcc + '/Std'
+    std = libplcc + '/Std/' + getFlag('language')
     for fname in STDP:
         if getFlag(fname):
             debug('[parFinishUp] copying {} from {} to {} ...'.format(fname, std, dst))
