@@ -1,145 +1,116 @@
-import java.util.*;
-import java.util.regex.*;
+from enum import Enum
 
-// Token class with match patterns (used with the built-in Scan class)
-public class Token {
+# Token class with match patterns (used with the built-in Scan class)
+class Token:
 
-    // patternFail is set to an error message string
-    // if there are pattern compile errors
-    public static String patternFail = null; //
-    public static final Match $eof = Match.$EOF;
+    # patternFail is set to an error message string
+    # if there are pattern compile errors
+    patternFail = None
+    eof = Match.EOF
 
-    public enum TokType {
-        TOKEN,
-        SKIP,
-        LINE_TOGGLE,
-        SPECIAL;
-    }
+    class TokType(Enum):
+        TOKEN
+        SKIP
+        LINE_TOGGLE
+        SPECIAL
 
-    public enum Match {
-%%Match%%
-        $ERROR (null),
-        $EOF (null),
-        $LINE (null);
+    class Match(Enum):
+    %%Match%%
+        ERROR = None
+        EOF = None
+        LINE = None
 
-        public String pattern;
-        public TokType tokType;
-        public Pattern cPattern = null; // compiled pattern
+        pattern = None
+        tokType = None
+        cPattern = None # compiled pattern
 
-        // a SPECIAL token type or a TOKEN/LINE_TOGGLE
-        Match(String pattern) {
-            this(pattern, null);
-        } 
+        # a SPECIAL token type or a TOKEN/LINE_TOGGLE
+        def __init_(self,pattern):
+            self(pattern, None)
 
-        // legacy ??
-        Match(String pattern, boolean skip) {
-            this(pattern, TokType.SKIP);
-        }
+        # legacy ??
+        def __init__(self, pattern, skip):
+            self.pattern = pattern
+            self.tokType = TokType.SKIP
 
-        Match(String pattern, TokType tokType) {
-            if (pattern != null) {
-                if (tokType == TokType.SKIP) {
-                    this.tokType = TokType.SKIP;
-                } else if (pattern.length() >= 2 &&
-                           pattern.substring(0,2).equals("^^")) {
-                    pattern = pattern.substring(1);
-                    this.tokType = TokType.LINE_TOGGLE;
-                } else {
-                    this.tokType = TokType.TOKEN;
-                }
-                this.pattern = pattern;
-                try {
-                    this.cPattern = Pattern.compile(pattern, Pattern.DOTALL);
-                } catch (PatternSyntaxException e) {
-                    if (patternFail == null) {
-                        patternFail = "Lexical specification errors() for";
-                    }
-                    patternFail += (" " +this);
-                    this.cPattern = null;
-                }
-            } else {
-                this.tokType = TokType.SPECIAL; // SPECIAL
-            }
-        }
+        def __init__(self, pattern, tokType):
+            if pattern != None:
+                if tokType == TokType.SKIP:
+                    self.tokType = TokType.SKIP
+                elif len(pattern) >= 2 and pattern[0:2] == "^^":
+                    self.pattern = pattern[1:]
+                    self.tokType = TokType.LINE_TOGGLE
+                else:
+                    self.tokType = TokType.TOKEN
+                self.pattern = pattern
+                try:
+                    self.cPattern = Pattern.compile(pattern, Pattern.DOTALL);
+                except RuntimeError:
+                    if patternFail == None:
+                        patternFail = "Lexical specification errors() for"
+                    patternFail += (" " + self)
+                    self.cPattern = None
+            else:
+                self.tokType = TokType.SPECIAL # SPECIAL
 
-        // Use this to force loading Match class to compile patterns.
-        public static String init() {
-            return patternFail; // returns null if no errors
-        }
-    }
+        # Use this to force loading Match class to compile patterns.
+        def init():
+            return patternFail # returns null if no errors
 
-    public Match match;      // token match
-    public String str;       // this token's lexeme
-    public int lno;          // the line number where this token was found
-    public String line;      // the text line where this token appears
+    match = None    # token match
+    str = None       # this token's lexeme
+    lno = None       # the line number where this token was found
+    line = None      # the text line where this token appears
 
-    public Token() {
-        match = null;
-        str = null;
-        lno = 0;
-        line = null;
-    }
+    def __init__(self):
+        match = None
+        str = None
+        lno = 0
+        line = None
 
-    public Token(Match match, String str, int lno, String line) {
-        this.match = match;
-        this.str = str;
-        this.lno = lno;
-        this.line = line;
-    }
+    def __init__(self, match, str, lno, line):
+        self.match = match
+        self.str = str
+        self.lno = lno
+        self.line = line
 
-    public Token(Match match, String str) {
-        this(match, str, 0, null);
-    }
+    def __init__(self, match, str):
+        self(match, str, 0, None)
 
-    public String toString() {
-        return str;
-    }
+    def toString():
+        return str
 
-    public String errString() {
-        switch(match) {
-        case $EOF:
-        case $ERROR:
-            return str;
-        default:
-            return match.toString(); // just the match name
-        }
-    }
+    def errString():
+        match self.match:
+            case EOF:
+            case ERROR:
+                return str
+            default:
+                return match.toString() # just the match name
 
-    public boolean isEOF() {
-        return this.match == $eof;
-    }
+    def isEOF():
+        return self.match == eof
 
-    public static void main(String [] args) {
-        String msg = Match.init();
-        if (msg != null) {
-            System.out.println(msg);
-            System.exit(1);
-        }
-        for (Match match: Match.values()) {
-            if (match.tokType == TokType.SPECIAL) {
-                System.out.println(
-                    String.format("special "+match.toString())
-                );
-                continue; // not a real token
-            }
-            String what = "??";
-            switch(match.tokType) {
+    if __name__== __main__:
+        msg = Match.init()
+        if msg != None:
+            print(msg + '\n')
+            sys.exit()
+        for match in Match.values():
+            if match.tokType == TokType.SPECIAL:
+                print("special " + match.toString())
+                continue # not a real token
+            what = "??"
+            match match.tokType:
                 case SKIP:
-                    what = "skip";
-                    break;
-                case TOKEN:
-                    what = "token";
-                    break;
+                    what = "skip"
+                    break
+                case TOKEN
+                    what = "token"
+                    break
                 case LINE_TOGGLE:
-                    what = "token (line toggle)";
-                    break;
-            }
-            System.out.println(
-                String.format("%s %s '%s'",what,match.toString(),match.pattern)
-            );
-        }
-    }
+                    what = "token (line toggle)"
+                    break
+            print("%s %s '%s'".format(what, match.toString(), match.pattern))
 
-//Token//
-
-}
+#Token#

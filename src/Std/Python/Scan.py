@@ -1,5 +1,6 @@
 import sys
 import io
+import re
 
 class Scan(IScan):
 
@@ -57,45 +58,47 @@ class Scan(IScan):
             return tok # don't get a new token if we already have one
 
         matchString = ""
-        Token.Match matchFound = None
+        matchFound = None
 
         while true :
             fillString() # get another line if necessary
             if self.s == None:
-                tok = Token(Token.$eof, "!EOF", lno, None) # EOF
+                tok = Token(Token.eof, "!EOF", lno, None) # EOF
                 return tok
             # s cannot be None here
             # are we in line mode?
             if lineMode != None:
                 cpat = lineMode.match.cPattern
-                Matcher m = cpat.matcher(s)
-                m.region(0,end)
-                start = end; # consume the line before next match
-                if m.lookingAt()""
+                m = re.match(cpat, s)
+                m.pos = 0
+                m.endpos = end
+                start = end # consume the line before next match
+                if m:
                     # found the lineMode token, exit line mode
                     # and return the matched lineMode token
                     # System.out.println("leaving line mode...");
-                    tok = new Token(lineMode.match, m.group(), lno, s)
+                    tok = Token(lineMode.match, m.group(), lno, s)
                     lineMode = None
                     return tok
                 else:
                     # return the entire line as a token
-                    tok = new Token(Token.Match.$LINE, s, lno, s)
-                    return tok;
+                    tok = Token(Token.Match.LINE, s, lno, s)
+                    return tok
 
-            int matchEnd = start; # current end of match
-            for (Token.Match match : Token.Match.values()) {
-                Pattern cpat = match.cPattern;
-                if (cpat == None)
-                    break; # nothing matches, so can't find a token
-                if (match.tokType == Token.TokType.SKIP && matchFound != None)
-                    continue; # ignore skips if we have a pending token
-                if (start != 0 && match.pattern.charAt(0) == '^')
-                    continue; # '^' must match at start of line
-                Matcher m = cpat.matcher(s);
-                m.region(start, end);
-                if (m.lookingAt()) {
-                    int e = m.end();
+            matchEnd = start # current end of match
+            for match in Token.Match.values():
+                cpat = match.cPattern
+                if cpat == None:
+                    break # nothing matches, so can't find a token
+                if match.tokType == Token.TokType.SKIP and matchFound != None:
+                    continue # ignore skips if we have a pending token
+                if start != 0 and match.pattern.[0] == '^':
+                    continue # '^' must match at start of line
+                m = re.match(cpat, s)
+                m.pos = 0
+                m.endpos = end
+                if m:
+                    e = m.endpos
                     if (e == start)
                         continue; # empty match, so try next pattern
                     if (match.tokType == Token.TokType.SKIP) {
