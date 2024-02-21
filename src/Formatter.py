@@ -4,12 +4,17 @@ class Formatter():
 
     def __init__(self):
         pass
+    
+    def toString(self):
+        return "No language specified."
 
     def formatAbstractStub(self,base,cases,nt2cls):
         pass
     def formatStub(self,extends,cls,lhs,fieldVars,ruleString,parseString,nt2cls):
         pass
     def formatArbnoParse(self, cls, rhs, sep, inits, args, loopList, fieldVars, fieldSet, rhsString, switchCases):
+        pass
+    def formatInjection(self, stub, cls, mod, codeString, num):
         pass
 
 
@@ -22,6 +27,9 @@ class PythonFormatter(Formatter):
 
     def __init__(self):
         pass
+    
+    def toString(self):
+        return "Python"
 
     def formatAbstractStub(self,base,cases,caseList,nt2cls):
         if base == nt2cls:
@@ -168,6 +176,9 @@ class JavaFormatter(Formatter):
 
     def __init__(self):
         pass
+    
+    def toString(self):
+        return "Java"
 
     def formatAbstractStub(self,base,cases,caseList,nt2cls):
         if base == nt2cls:
@@ -200,7 +211,7 @@ public abstract class {base}{ext} /*{base}:class*/ {{
 }}
             """.format(base=base,
                 ext=ext,
-                cases='\n\t\t\t\t'.join(caseList)
+                cases='\n\t\t\t'.join(caseList)
                 )
         return stubString
 

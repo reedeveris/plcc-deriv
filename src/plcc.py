@@ -168,6 +168,7 @@ def lex(nxt):
         if line[0] == '@': # change output language
             changeLang(line)
             lang = getattr(Formatter, getFlag('language')+'Formatter')()
+            print("Language: " + lang.toString())
             continue
         if line[0] == '!': # handle a PLCC compile-time flag
             if flagSwitch:
@@ -272,7 +273,7 @@ def lexFinishUp():
     libplcc = getFlag('libplcc')
     if not libplcc:
         death('illegal libplcc flag value')
-    std = libplcc + '/Std/' + getFlag('language')
+    std = libplcc + '/Std/' + getFlag('language') + 'S'
     print(std)
     try:
         os.mkdir(std)
@@ -395,7 +396,7 @@ def parFinishUp():
     # copy the Std parser-related files
     dst = getFlag('language')
     libplcc = getFlag('libplcc')
-    std = libplcc + '/Std/' + getFlag('language')
+    std = libplcc + '/Std/' + getFlag('language') + 'S'
     for fname in STDP:
         if getFlag(fname):
             debug('[parFinishUp] copying {} from {} to {} ...'.format(fname, std, dst))
