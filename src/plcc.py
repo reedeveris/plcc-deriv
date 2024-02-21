@@ -273,6 +273,7 @@ def lexFinishUp():
     if not libplcc:
         death('illegal libplcc flag value')
     std = libplcc + '/Std/' + getFlag('language')
+    print(std)
     try:
         os.mkdir(std)
     except FileExistsError:
@@ -779,7 +780,7 @@ public abstract class _Start {{
     startFile.close()
 
 def sem(nxt):
-    global stubs, argv
+    global stubs, argv, lang
     # print('=== semantic routines')
     if not getFlag('semantics'):
         semFinishUp()
@@ -807,15 +808,18 @@ def sem(nxt):
             continue
         # check to see if line has the form Class:mod
         mod = mod.strip() # mod might be 'import', 'top', etc.
+        if cls in stubs:
+            if mod and mod != 'ignore' and mod != 'top':
+                codeString = '\n\t\t'.join(codeString)
+            else:
+                codeString = '\n\t'.join(codeString)
+        else:
+            codeString = '\n'.join(codeString)
         if mod:
             if cls == '*': # apply the mod substitution to *all* of the stubs
                 for cls in stubs:
                     stub = stubs[cls]
-                    repl = '//{}:{}//'.format(cls, mod)
-                    stub = stub.replace(repl, '{}\n{}'.format(codeString,repl))
-                    repl = '/*{}:{}*/'.format(cls, mod)
-                    stub = stub.replace(repl, '{} {}'.format(codeString,repl))
-                    debug('class {}:\n{}\n'.format(cls, stub))
+                    stub = lang.formatInjection(stub, cls, mod, codeString, 1)
                     stubs[cls] = stub
                 continue
         # if mod == 'ignore!':
@@ -825,13 +829,9 @@ def sem(nxt):
         if cls in stubs:
             stub = stubs[cls]
             if mod:
-                repl = '//{}:{}//'.format(cls, mod)
-                stub = stub.replace(repl, '{}\n{}'.format(codeString,repl))
-                repl = '/*{}:{}*/'.format(cls, mod)
-                stub = stub.replace(repl, '{} {}'.format(codeString,repl))
+                stub = lang.formatInjection(stub, cls, mod, codeString, 1)
             else: # the default
-                repl = '//{}//'.format(cls)
-                stub = stub.replace(repl, '{}\n\n{}'.format(codeString,repl))
+                stub = lang.formatInjection(stub, cls, mod, codeString, 0)
             debug('class {}:\n{}\n'.format(cls, stub))
             stubs[cls] = stub
         else:
@@ -843,6 +843,7 @@ def sem(nxt):
 
 def getCode(nxt):
     code = []
+    offset = None
     for line in nxt:
         line = line.rstrip()
         if re.match(r'\s*#', line) or re.match(r'\s*$', line):
@@ -860,12 +861,18 @@ def getCode(nxt):
     for line in nxt:
         if re.match(stopMatch, line):
             break
+        if offset == None:
+            offset = getOffset(line)
+        line = removeOffset(line, offset)
         code.append(line)
     else:
         deathLNO('premature end of file')
     lineMode = False # switch off line mode
-    str = '\n'.join(code)
-    return str + '\n'
+    while len(code[0]) == 0:
+        code.pop(0)
+    while len(code[-1]) == 0:
+        code.pop()
+    return code
 
 def semFinishUp():
     if getFlag('nowrite'):
@@ -1127,6 +1134,46 @@ def isTerm(term):
 def nt2cls(nt):
     # return the class name of the nonterminal nt
     return nt[0].upper() + nt[1:]
+
+def removeOffset(ln, offset):
+    check = ln.strip()
+    if len(check) == 0:
+        return ln
+    if offset == 0:
+        return ln
+    wscount = 0
+    numtab = 0
+    indent = ''
+    for c in ln:
+        if c == ' ':
+            wscount += 1
+        elif c == '\t':
+            numtab += 1
+        else:
+            break
+    line = ln.lstrip()
+    if wscount != 0:
+        wscount = wscount - offset
+        indent += ' ' * wscount
+    else:
+        numtab = numtab - offset
+        indent += '\t' * numtab
+    line = indent + line
+    return line
+
+def getOffset(line):
+    check = line.lstrip()
+    if len(check) == 0 or check[0] == '#':
+        return None
+    ws = 0
+    for c in line:
+        if c == ' ':
+            ws += 1
+        elif c == '\t':
+            return -1
+        else:
+            break
+    return ws
 
 if __name__ == '__main__':
     main()

@@ -112,7 +112,7 @@ while true:
     Token.Match match = t.match
     match match:
         {switchCases}
-            {loopList}
+        {loopList}
             continue
         default:
             {returnItem}
@@ -145,6 +145,17 @@ Token.Match match = t.match
             returnItem=returnItem,
             sep=sep)
         return (fieldVars, parseString)
+
+    def formatInjection(self, stub, cls, mod, codeString, num):
+        if num == 1:
+            repl = '#{}:{}#'.format(cls, mod)
+            stub = stub.replace(repl, '{}\n{}'.format(codeString,repl))
+            repl = '#{}:{}#'.format(cls, mod)
+            stub = stub.replace(repl, '{} {}'.format(codeString,repl))
+        else:
+            repl = '//{}//'.format(cls)
+            stub = stub.replace(repl, '{}\n\n{}'.format(codeString,repl))
+        return stub
 
 
 
@@ -187,7 +198,7 @@ public abstract class {base}{ext} /*{base}:class*/ {{
 
     //{base}//
 }}
-        """.format(base=base,
+            """.format(base=base,
                 ext=ext,
                 cases='\n\t\t\t\t'.join(caseList)
                 )
@@ -235,7 +246,7 @@ public class {cls}{ext} /*{cls}:class*/ {{
 
     //{cls}//
 }}
-        """.format(cls=cls,
+            """.format(cls=cls,
                 lhs=lhs,
                 ext=ext,
                 ruleString=ruleString,
@@ -245,10 +256,10 @@ public class {cls}{ext} /*{cls}:class*/ {{
                 parse=parseString)
         return stubString
 
-def formatArbnoParse(self, cls, rhs, sep, inits, args, loopList, fieldVars, fieldSet, rhsString, switchCases, returnItem):
-    if sep == None:
-        # no separator
-        parseString = """\
+    def formatArbnoParse(self, cls, rhs, sep, inits, args, loopList, fieldVars, fieldSet, rhsString, switchCases, returnItem):
+        if sep == None:
+            # no separator
+            parseString = """\
 {inits}
 while (true) {{
     Token t$ = scn$.cur();
@@ -256,18 +267,18 @@ while (true) {{
     switch(match$) {{
         {switchCases}
         {loopList}
-        continue;
-    default:
-        {returnItem}
+            continue;
+        default:
+            {returnItem}
     }}
 }}
-            """.format(inits='\n\t\t'.join(inits),
-           switchCases='\n\t\t\t'.join(switchCases),
-           loopList='\n\t\t\t\t'.join(loopList),
-           returnItem=returnItem)
-    else:
-        # there's a separator
-        parseString = """\
+        """.format(inits='\n\t\t'.join(inits),
+            switchCases='\n\t\t'.join(switchCases),
+            loopList='\n\t\t\t'.join(loopList),
+            returnItem=returnItem)
+        else:
+            # there's a separator
+            parseString = """\
 {inits}
 // first trip through the parse
 Token t$ = scn$.cur();
@@ -285,8 +296,19 @@ switch(match$) {{
 }} // end of switch
 {returnItem}
             """.format(inits='\n\t\t'.join(inits),
-           switchCases='\n\t\t'.join(switchCases),
-           loopList='\n\t\t\t\t'.join(loopList),
-           returnItem=returnItem,
-           sep=sep)
-    return (fieldVars, parseString)
+            switchCases='\n\t\t'.join(switchCases),
+            loopList='\n\t\t\t\t'.join(loopList),
+            returnItem=returnItem,
+            sep=sep)
+        return (fieldVars, parseString)
+    
+    def formatInjection(self, stub, cls, mod, codeString, num):
+        if num == 1:
+            repl = '//{}:{}//'.format(cls, mod)
+            stub = stub.replace(repl, '{}\n{}'.format(codeString,repl))
+            repl = '/*{}:{}*/'.format(cls, mod)
+            stub = stub.replace(repl, '{} {}'.format(codeString,repl))
+        else:
+            repl = '//{}//'.format(cls)
+            stub = stub.replace(repl, '{}\n\n{}'.format(codeString,repl))
+        return stub
