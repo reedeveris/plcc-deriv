@@ -3,7 +3,7 @@ import sys
 class Rep(ProcessFiles):
 
     # Parse the program and call $run() on the resulting parse tree
-    def action(Scan scn, Trace trace)
+    def action(scn, trace)
         _Start.parse(scn, trace).run()
 
    

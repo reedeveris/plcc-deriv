@@ -55,7 +55,7 @@ class ProcessFiles():
                 prog = ""  if prog == null else None
                 continue
             try:
-                scn = new Scan(new BufferedReader(new FileReader(s)));
+                scn = Scan(io.BufferedReader(io.TextIO(s)))
             except FileNotFoundError:
                 print(s + ": no such file ... exiting\n")
                 sys.exit()
@@ -63,7 +63,7 @@ class ProcessFiles():
                 prog = "[" + s + "]"
             processFile(scn, trace, "", prog)
         # finally read and process programs from standard input
-        rdr = io.BufferedReader(io.TextIOWrapper(sys.stdin))
+        rdr = io.BufferedReader(io.TextIO(sys.stdin))
         scn = Scan(rdr)
         if prog != None:
             prog = "[stdin]"

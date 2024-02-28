@@ -28,7 +28,7 @@ class Scan(IScan):
 
     # create a scanner object on a string
    def __init__(self, s):
-        self(io.BufferedReader(io.StringIO(s)))
+        self(io.BufferedReader(io.TextIO(s)))
 
     def reset(self):
         # force the scanner to process the next line
@@ -179,33 +179,18 @@ class Scan(IScan):
         adv()
         return t
 
-    public static void main(String [] args) {
-        BufferedReader rdr = None;
-        if (args.length == 0) {
-            rdr = new BufferedReader(new InputStreamReader(System.in));
-        } else if (args.length == 1) {
-            try {
-                rdr = new BufferedReader(new FileReader(args[0]));
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-                System.exit(1);
-            }
-        }
-        else {
-            System.err.println("usage: Scan [filename]");
-            System.exit(1);
-        }
-        Scan scn = new Scan(rdr);
-        scn.printTokens();
-
 if __name__ == __main__:
     rdr = None
     if len(sys.argv) == 0:
-        rdr = io.BufferedReader(io.StringIO(sys.stdin))
+        rdr = io.BufferedReader(io.TextIO(sys.stdin))
     elif len(sys.argv) == 1:
         try:
-            rdr = io.BufferedReader(new FileReader(args[0]));
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            System.exit(1);
-        }
+            rdr = io.BufferedReader(io.TextIO(args[0]))
+        except Exception as e:
+            print(e.message + '\n')
+            sys.exit()
+    else:
+        print("usage: Scan [filename]", file=sys.stderr)
+        sys.exit()
+    scn = Scan(rdr)
+    scn.printTokens()

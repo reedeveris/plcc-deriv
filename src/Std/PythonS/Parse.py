@@ -10,4 +10,4 @@ class Parse(ProcessFiles):
 # Read programs from command-line files
 # and then read programs from standard input.
 if __name__ == __main__:
-    new Parse().processFiles(sys.argv[1:])
+    Parse().processFiles(sys.argv[1:])
