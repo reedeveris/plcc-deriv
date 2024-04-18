@@ -135,7 +135,7 @@ def plccInit():
     flags['Token'] = True         # generate scanner-related files
     # behavior-related flags
     flags['debug'] = 0                  # default debug value
-    flags['language'] = 'Python'        # the default output language (supports Python and Java)
+    flags['language'] = 'Java'        # the default output language (supports Python and Java)
     flags['pattern'] = True             # create a scanner that uses re. patterns
     flags['LL1'] = True                 # check for LL(1)
     flags['parser'] = True              # create a parser
@@ -156,6 +156,7 @@ def lex(nxt):
     # Handle any flags appearing at beginning of lexical spec section;
     # turn off when all flags have been processed
     flagSwitch = True # turn off after all the flags have been processed
+    lang = getattr(Formatter, getFlag('language')+'Formatter')() # Default language formatter is Java
     for line in nxt:
         line = re.sub(r'\s+#.*', '', line)   # remove trailing comments ...
         # NOTE: a token that has a substring like this ' #' will mistakenly be
