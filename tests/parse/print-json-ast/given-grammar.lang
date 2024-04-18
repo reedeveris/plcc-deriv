@@ -1,3 +1,4 @@
+@Java
 skip WHITESPACE '\s+'
 skip COMMENT '%.*'
 LIT '\d+'

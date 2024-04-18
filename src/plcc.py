@@ -24,7 +24,7 @@ import os
 import io
 import shutil
 import tempfile
-import Formatters
+import Formatter
 argv = sys.argv[1:] # skip over the command-line argument
 
 # current file information
@@ -325,7 +325,10 @@ def lexFinishUp():
         if getFlag(fname):
             debug('[lexFinishUp] copying {} from {} to {} ...'.format(fname, std, dst))
             try:
-                shutil.copy('{}/{}.java'.format(std, fname), '{}/{}.java'.format(dst, fname))
+                if dst == 'Python':
+                    shutil.copy('{}/{}.py'.format(std, fname), '{}/{}.py'.format(dst, fname))
+                elif dst == 'Java':
+                    shutil.copy('{}/{}.java'.format(std, fname), '{}/{}.java'.format(dst, fname))
             except:
                 death('Failure copying {} from {} to {}'.format(fname, std, dst))
 
@@ -401,7 +404,10 @@ def parFinishUp():
         if getFlag(fname):
             debug('[parFinishUp] copying {} from {} to {} ...'.format(fname, std, dst))
             try:
-                shutil.copy('{}/{}.java'.format(std, fname), '{}/{}.java'.format(dst, fname))
+                if dst == 'Python':
+                    shutil.copy('{}/{}.py'.format(std, fname), '{}/{}.py'.format(dst, fname))
+                elif dst == 'Java':
+                    shutil.copy('{}/{}.java'.format(std, fname), '{}/{}.java'.format(dst, fname))
             except:
                 death('Failure copying {} from {} to {}'.format(fname, std, dst))
 
@@ -840,7 +846,7 @@ def sem(nxt):
                 deathLNO('no stub for class {} -- cannot replace //{}:{}//'.format(cls, cls, mod))
             stubs[cls] = codeString
     semFinishUp()
-    
+
 
 def getCode(nxt):
     code = []

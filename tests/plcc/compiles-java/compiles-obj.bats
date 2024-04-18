@@ -2,7 +2,7 @@
 
 load '../../relocate_to_temp.bash'
 
-@test "PLCC compiles the OBJ language." {
+@test "PLCC compiles OBJ in Java." {
   relocate_to_temp
 
   cd OBJ

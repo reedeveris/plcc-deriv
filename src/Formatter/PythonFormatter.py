@@ -1,13 +1,13 @@
-import Formatter
+from .Formatter import Formatter
 
 class PythonFormatter(Formatter):
 
     def __init__(self):
         pass
-    
+
     def toString(self):
         return "Python"
-    
+
     def indent(n, iList):
         ### make a new list with the old list items prepended with 4*n spaces
         indentString = '\t'*n
@@ -44,12 +44,12 @@ class {base}({ext}, ABC) :
     #{base}#
         """.format(base=base,
                 ext=ext,
-                cases='\n'.join(indent(3,caseList))
+                cases='\n'.join(self.indent(3,caseList))
                 )
         return stubString
-    
+
     def formatStub(self,extends,cls,lhs,fieldVars,ruleString,parseString,nt2cls):
-        ext = None
+        ext = ''
         if cls in extends:
             ext = extends[cls]
         else:
@@ -61,7 +61,7 @@ class {base}({ext}, ABC) :
         for (field, fieldType) in fieldVars:
             decls.append('{} = None'.format(field))
             inits.append('self.{} = {}'.format(field, field))
-            params.append('{}'.format(field))        
+            params.append('{}'.format(field))
         if cls == nt2cls:
             ext = '_Start'
         stubString = """\
@@ -90,9 +90,9 @@ class {cls}({ext}):
                 lhs=lhs,
                 ext=ext,
                 ruleString=ruleString,
-                decls='\n'.join(indent(1,decls)),
+                decls='\n'.join(self.indent(1,decls)),
                 params=', '.join(params),
-                inits='\n'.join(indent(2,inits)),
+                inits='\n'.join(self.indent(2,inits)),
                 parse=parseString)
         return stubString
 
@@ -111,9 +111,9 @@ while true:
         default:
             {returnItem}
 
-            """.format(inits='\n'.join(indent(2,inits)),
-            switchCases='\n'.join(indent(2,switchCases)),
-            loopList='\n'.join(indent(3,loopList)),
+            """.format(inits='\n'.join(self.indent(2,inits)),
+            switchCases='\n'.join(self.indent(2,switchCases)),
+            loopList='\n'.join(self.indent(3,loopList)),
             returnItem=returnItem)
         else:
             # there's a separator
@@ -133,13 +133,13 @@ Token.Match match = t.match
                 scn.match(match, trace)
         # end of switch
     {returnItem}
-            """.format(inits='\n'.join(indent(2,inits)),
-            switchCases='\n'.join(indent(2,switchCases)),
-            loopList='\n'.join(indent(4,loopList)),
+            """.format(inits='\n'.join(self.indent(2,inits)),
+            switchCases='\n'.join(self.indent(2,switchCases)),
+            loopList='\n'.join(self.indent(4,loopList)),
             returnItem=returnItem,
             sep=sep)
         return (fieldVars, parseString)
-    
+
     def formatInjection(self, stub, cls, mod, codeString, num):
         if num == 1:
             repl = '#{}:{}#'.format(cls, mod)

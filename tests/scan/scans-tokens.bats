@@ -6,6 +6,7 @@ load '../relocate_to_temp.bash'
   relocate_to_temp
 
   cat << EOF > grammar
+@Java
 skip WHITESPACE '\s'
 token FOO 'foo'
 token BAR 'bar'

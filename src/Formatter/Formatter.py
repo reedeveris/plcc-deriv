@@ -3,7 +3,7 @@ class Formatter():
 
     def __init__(self):
         pass
-    
+
     def toString(self):
         return "No language specified."
 

@@ -7,6 +7,7 @@ load '../relocate_to_temp.bash'
 
   # GIVEN a grammar file with a bad token name
   cat << EOF > grammar
+@Java
 token bad_token_name '.'
 EOF
 
