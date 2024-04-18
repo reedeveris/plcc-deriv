@@ -8,7 +8,7 @@ class PythonFormatter(Formatter):
     def toString(self):
         return "Python"
 
-    def indent(n, iList):
+    def indent(self, n, iList):
         ### make a new list with the old list items prepended with 4*n spaces
         indentString = '\t'*n
         newList = []

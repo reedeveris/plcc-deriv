@@ -281,7 +281,10 @@ def lexFinishUp():
         pass
     except:
         death(std + ': cannot access directory')
-    fname = '{}/{}'.format(dst, 'Token.java')
+    if dst == 'Python':
+        fname = '{}/{}'.format(dst, 'Token.py')
+    elif dst == 'Java':
+        fname = '{}/{}'.format(dst, 'Token.java')
     try:
         tokenFile = open(fname, 'w')
     except:
