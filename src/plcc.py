@@ -24,7 +24,7 @@ import os
 import io
 import shutil
 import tempfile
-import Formatter
+import Formatters
 argv = sys.argv[1:] # skip over the command-line argument
 
 # current file information
@@ -869,10 +869,11 @@ def getCode(nxt):
     else:
         deathLNO('premature end of file')
     lineMode = False # switch off line mode
-    while len(code[0]) == 0:
-        code.pop(0)
-    while len(code[-1]) == 0:
-        code.pop()
+    if len(code)>0 :
+        while len(code[0]) == 0:
+            code.pop(0)
+        while len(code[-1]) == 0:
+            code.pop()
     return code
 
 def semFinishUp():
@@ -1140,41 +1141,15 @@ def removeOffset(ln, offset):
     check = ln.strip()
     if len(check) == 0:
         return ln
-    if offset == 0:
-        return ln
-    wscount = 0
-    numtab = 0
-    indent = ''
-    for c in ln:
-        if c == ' ':
-            wscount += 1
-        elif c == '\t':
-            numtab += 1
-        else:
-            break
-    line = ln.lstrip()
-    if wscount != 0:
-        wscount = wscount - offset
-        indent += ' ' * wscount
-    else:
-        numtab = numtab - offset
-        indent += '\t' * numtab
-    line = indent + line
-    return line
+    s = re.sub(offset,"",ln,count=1)
+    return s
 
 def getOffset(line):
     check = line.lstrip()
     if len(check) == 0 or check[0] == '#':
         return None
-    ws = 0
-    for c in line:
-        if c == ' ':
-            ws += 1
-        elif c == '\t':
-            return -1
-        else:
-            break
-    return ws
+    s = re.search(r"\S", line).start()
+    return line[0:s]
 
 if __name__ == '__main__':
     main()

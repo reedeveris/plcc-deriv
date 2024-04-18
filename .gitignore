@@ -1,5 +1,11 @@
+# This is created by bin/test/languages.bash. But should not be committed.
+languages/
+
 # PLCC places generated Java files in directories named Java. Ignore them.
 Java/
+
+# PLCC places generated Python files in directories named Python. Ignore them.
+Python/
 
 # Created by Docker environment
 .bash_history
